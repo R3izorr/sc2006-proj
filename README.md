@@ -41,33 +41,33 @@ sc2006-proj/
 ## Functional Requirements
 
 ### Display map
-1.1 DisplaySubzones — Draw URA subzone polygons. Polygons are hoverable and clickable.
-1.2 ChoroplethLayer — Shade subzones by Hawker-Opportunity Score with legend and normalized colour scale.
-1.3 MapInteractionControls — Zoom, pan, and hover interactions on the subzone map.
+- 1.1 DisplaySubzones — Draw URA subzone polygons. Polygons are hoverable and clickable.
+- 1.2 ChoroplethLayer — Shade subzones by Hawker-Opportunity Score with legend and normalized colour scale.
+- 1.3 MapInteractionControls — Zoom, pan, and hover interactions on the subzone map.
 
 ### Display score and percentile
-2.1 Hawker-OpportunityScore — Compute Dem, Sup, Acc, z-scale components, and produce Hᵢ with configurable weights and bandwidths.
-2.2 ShowSubzoneRankPercentile — Show each selected subzone’s city-wide percentile for Hᵢ.
+- 2.1 Hawker-OpportunityScore — Compute Dem, Sup, Acc, z-scale components, and produce Hᵢ with configurable weights and bandwidths.
+- 2.2 ShowSubzoneRankPercentile — Show each selected subzone’s city-wide percentile for Hᵢ.
 
 ### Filtering and search
-3.1 FilterByGeography — Filter visible subzones by region and optional subzone.
-3.2 FilterByScoreQuantile — Filter by Top 10% / 25% / 50% or All; update legend accordingly.
-3.3 SearchBySubzoneName — Autocomplete search; zoom and highlight on selection.
+- 3.1 FilterByGeography — Filter visible subzones by region and optional subzone.
+- 3.2 FilterByScoreQuantile — Filter by Top 10% / 25% / 50% or All; update legend accordingly.
+- 3.3 SearchBySubzoneName — Autocomplete search; zoom and highlight on selection.
 
 ### Subzone details and comparison
-4.1 ShowSubzoneDetails — For a selected subzone, display demographics, nearby hawker centres, nearby MRT/bus, Dem/Sup/Acc component values, final Hᵢ, and simple charts.
-4.2 SubzoneComparison — Let users add up to two subzones to a tray and view side-by-side metrics with radar/table views. (a subpage in the main page map)
+- 4.1 ShowSubzoneDetails — For a selected subzone, display demographics, nearby hawker centres, nearby MRT/bus, Dem/Sup/Acc component values, final Hᵢ, and simple charts.
+- 4.2 SubzoneComparison — Let users add up to two subzones to a tray and view side-by-side metrics with radar/table views. (a subpage in the main page map)
 
 ### Admin data operations and export
-5.1 RefreshDatasets (Admin) — Reload official datasets and recompute scores; save a new snapshot.
-5.2 ManageSnapshots (Admin) — List, view, and restore snapshots with version notes and timestamps.
-5.3 ExportSubzoneDetails — Export the current subzone details view as PDF/PNG with metadata.
+- 5.1 RefreshDatasets (Admin) — Reload official datasets and recompute scores; save a new snapshot.
+- 5.2 ManageSnapshots (Admin) — List, view, and restore snapshots with version notes and timestamps.
+- 5.3 ExportSubzoneDetails — Export the current subzone details view as PDF/PNG with metadata.
 
 ### Authentication and password flows
-6.1 ClientRegistration — Register a client account.
-6.2 UserLogin — Log in with email and password; idle session timeout enforced.
-6.3 PasswordManagement — Change password while signed in; invalidate other sessions.
-6.4 ResetForgottenPassword — “Forgot Password” email flow with one-time token and policy checks.
+- 6.1 ClientRegistration — Register a client account.
+- 6.2 UserLogin — Log in with email and password; idle session timeout enforced.
+- 6.3 PasswordManagement — Change password while signed in; invalidate other sessions.
+- 6.4 ResetForgottenPassword — “Forgot Password” email flow with one-time token and policy checks.
 
 ## Tech Stack
 
