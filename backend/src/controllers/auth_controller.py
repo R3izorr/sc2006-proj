@@ -71,3 +71,4 @@ def me(session: Session, *, user_id: str) -> dict[str, Any]:
     return {"id": u.id, "email": u.email, "role": u.role, "created_at": u.created_at.isoformat() if u.created_at else None}
 
 
+
