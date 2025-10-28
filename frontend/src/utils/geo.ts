@@ -2,6 +2,10 @@ export function getSubzoneName(props: any): string | null {
   return props?.SUBZONE_N ?? props?.subzone ?? null
 }
 
+export function getPlanningAreaName(props: any): string | null {
+  return props?.PLN_AREA_N ?? props?.planning_area ?? props?.planarea ?? null
+}
+
 export function topQuantile(features: any[], pct: number): any[] {
   if (!features || !features.length) return []
   const vals = features

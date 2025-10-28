@@ -12,12 +12,12 @@ from bs4 import BeautifulSoup
 
 # ------------- Paths (same folder) -------------
 BASE = Path(__file__).resolve().parent
-MP   = BASE / "MasterPlan2019SubzoneBoundaryNoSeaGEOJSON.geojson"
-POP  = BASE / "ResidentPopulationbyPlanningAreaSubzoneofResidenceAgeGroupandSexCensusofPopulation2020.csv"
-HAWK = BASE / "HawkerCentresGEOJSON.geojson"
-MRT  = BASE / "LTAMRTStationExitGEOJSON.geojson"    # exits, CRS84/WGS84
-BUS  = BASE / "bus_stops.geojson"                    # your sample is EPSG:3414
-OUT  = BASE / "hawker_oppertunity.geojson"           # (requested spelling)
+MP   = "content/MasterPlan2019SubzoneBoundaryNoSeaGEOJSON.geojson"
+POP  = "content/ResidentPopulationbyPlanningAreaSubzoneofResidenceAgeGroupandSexCensusofPopulation2020.csv"
+HAWK = "content/HawkerCentresGEOJSON.geojson"
+MRT  = "content/LTAMRTStationExitGEOJSON.geojson"    # exits, CRS84/WGS84
+BUS  = "content/bus_stops.geojson"                    # your sample is EPSG:3414
+OUT  = "content/out/hawker_opportunities_ver2.geojson"           # (requested spelling)
 
 # ------------- Helpers -------------
 def parse_from_desc(html: str, key: str):
@@ -190,14 +190,24 @@ def main():
     hmin, hmax = H_raw.min(skipna=True), H_raw.max(skipna=True)
     gdf["H_score"] = 0.5 if (pd.isna(hmin) or pd.isna(hmax) or hmin==hmax) else (H_raw - hmin) / (hmax - hmin)
 
+    # Ranking
+    gdf["H_rank"] = (
+        gdf["H_score"]
+        .rank(method="dense", ascending=False)
+        .astype(int)
+    )
+
+    total_subzones = len(gdf)
+    gdf["H_rank_label"] = gdf["H_rank"].astype(str) + "/" + str(total_subzones)
+
     # 8) Final field order + export (WGS84)
     # Keep as GeoDataFrame to maintain geometry column
-    gdf_out = gdf[["name","subzone","planarea","population","pop_0_25","pop_25_65","pop_65plus","hawker","mrt","bus","H_score","geometry"]].copy()
+    gdf_out = gdf[["name","subzone","planarea","population","pop_0_25","pop_25_65","pop_65plus","hawker","mrt","bus","H_score","H_rank","geometry"]].copy()
     gdf_out = gdf_out.to_crs(4326)
     gdf_out.to_file(OUT, driver="GeoJSON")
 
     print(f"[ok] wrote {OUT} with {len(gdf_out)} features.")
-    print(gdf_out[["name","subzone","planarea","population","pop_0_25","pop_25_65","pop_65plus","hawker","mrt","bus","H_score"]]
+    print(gdf_out[["name","subzone","planarea","population","pop_0_25","pop_25_65","pop_65plus","hawker","mrt","bus","H_score","H_rank"]]
           .head(10).to_string(index=False))
 
 if __name__ == "__main__":

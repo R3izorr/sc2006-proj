@@ -5,6 +5,27 @@ import { AppStateProvider } from '../../contexts/AppStateContext'
 export default function MainPage(){
   const [selected, setSelected] = useState<any | null>(null)
   const [compare, setCompare] = useState<any[]>([])
+  const [tab, setTab] = useState<'details'|'search'|'filter'>('details')
+  const [searchInput, setSearchInput] = useState<string>('')
+  const [searchName, setSearchName] = useState<string | null>(null)
+  const [allNames, setAllNames] = useState<string[]>([])
+  const [regions, setRegions] = useState<string[]>([])
+  const [regionName, setRegionName] = useState<string | null>(null)
+  const [regionIndex, setRegionIndex] = useState<Record<string,string[]>>({})
+  const [rankTop, setRankTop] = useState<10|20|50|null>(null)
+  const [rankBuckets, setRankBuckets] = useState<Record<'10'|'20'|'50', string[]>>({ '10': [], '20': [], '50': [] })
+  const filteredSubzones = useMemo(()=>{
+    let a = allNames
+    if(regionName){ a = a.filter(n => (regionIndex[regionName] ?? []).includes(n)) }
+    if(rankTop){ a = a.filter(n => (rankBuckets[String(rankTop) as '10'|'20'|'50'] ?? []).includes(n)) }
+    return a
+  }, [allNames, regionName, rankTop, regionIndex, rankBuckets])
+
+  const suggestions = useMemo(()=>{
+    const q = searchInput.trim().toLowerCase()
+    if(!q) return [] as string[]
+    return allNames.filter(n => n.toLowerCase().startsWith(q)).slice(0, 8)
+  }, [searchInput, allNames])
 
   const selectedId = useMemo(() => {
     if(!selected) return null
@@ -16,6 +37,7 @@ export default function MainPage(){
   const name = p.SUBZONE_N ?? p.subzone ?? '—'
   const planning = p.PLN_AREA_N ?? p.planning_area ?? p.planarea ?? '—'
   const h = normFmt(p.H_score ?? p.h_score)
+  const rank = p.H_rank ?? p.h_rank
   const pop = intFmt(p.population)
   const mrt = intFmt(p.mrt)
   const bus = intFmt(p.bus)
@@ -60,7 +82,7 @@ export default function MainPage(){
   return (
     <AppStateProvider>
       <div className="h-full relative">
-        <MapView selectedId={selectedId as any} onSelect={setSelected} />
+        <MapView selectedId={selectedId as any} onSelect={setSelected} searchName={searchName} onNamesLoaded={setAllNames} regionName={regionName} onRegionsLoaded={setRegions} onRegionIndexLoaded={setRegionIndex} rankTop={rankTop} onRankBucketsLoaded={setRankBuckets} />
 
         {/* Left tray */}
         <div className="absolute left-2 top-2 bottom-2 w-[360px] bg-white rounded-md shadow p-3 z-[1000] overflow-auto">
@@ -71,12 +93,13 @@ export default function MainPage(){
             )}
           </div>
           <div className="flex gap-3 border-b border-gray-200 pb-1 text-sm">
-            <span className="text-blue-600 font-semibold">Details</span>
-            <span className="text-gray-400">Search</span>
-            <span className="text-gray-400">Compare</span>
+            <button className={`${tab==='details' ? 'text-blue-600 font-semibold' : 'text-gray-400'}`} onClick={()=>setTab('details')}>Details</button>
+            <button className={`${tab==='search' ? 'text-blue-600 font-semibold' : 'text-gray-400'}`} onClick={()=>setTab('search')}>Search</button>
+            <button className={`${tab==='filter' ? 'text-blue-600 font-semibold' : 'text-gray-400'}`} onClick={()=>setTab('filter')}>Filter</button>
           </div>
 
-          {/* Detail card */}
+          {/* Detail / Search */}
+          {tab==='details' && (
           <div className="mt-3 border border-gray-200 rounded-lg p-3 grid grid-cols-[1fr_80px] gap-x-3 items-center">
             <div>
               <div className="font-semibold mb-0.5">{name}</div>
@@ -105,9 +128,79 @@ export default function MainPage(){
             <div className="text-right">
               <div className="text-xs text-gray-500">Score</div>
               <div className="text-2xl font-bold">{h}</div>
-              <div className="text-[11px] text-gray-400">Rank —</div>
+              <div className="text-[11px] text-gray-400">Rank {rank ?? '—'}</div>
             </div>
           </div>
+          )}
+
+          {tab==='filter' && (
+          <div className="mt-3 border border-gray-200 rounded-lg p-3">
+            <div className="text-sm text-gray-600 mb-2">Filter by region</div>
+            <div className="flex gap-2 items-center">
+              <select value={regionName ?? ''} onChange={e=> setRegionName(e.target.value || null)} className="flex-1 border rounded px-2 py-1 text-sm">
+                <option value="">All regions</option>
+                {regions.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <button onClick={()=> setRegionName(null)} className="px-3 py-1 border rounded text-sm">Clear</button>
+            </div>
+            <div className="text-sm text-gray-600 mt-4 mb-2">Filter by rank</div>
+            <div className="flex gap-2 items-center">
+              <select value={rankTop ?? ''} onChange={e=> setRankTop((e.target.value ? Number(e.target.value) : null) as any)} className="flex-1 border rounded px-2 py-1 text-sm">
+                <option value="">All ranks</option>
+                <option value="10">Top 10</option>
+                <option value="20">Top 20</option>
+                <option value="50">Top 50</option>
+              </select>
+              <button onClick={()=> setRankTop(null)} className="px-3 py-1 border rounded text-sm">Clear</button>
+            </div>
+            {filteredSubzones.length > 0 && (
+              <div className="mt-3">
+                <div className="text-sm text-gray-600 mb-1">Subzones matching filters</div>
+                <div className="border border-gray-200 rounded">
+                  {filteredSubzones.map(n => (
+                    <button
+                      key={n}
+                      onClick={()=>{ setSearchInput(n); setSearchName(n) }}
+                      className="w-full text-left px-2 py-1 text-sm hover:bg-gray-50"
+                    >{n}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          )}
+
+          {tab==='search' && (
+          <div className="mt-3 border border-gray-200 rounded-lg p-3">
+            <div className="text-sm text-gray-600 mb-2">Search by subzone name</div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={e=>setSearchInput(e.target.value)}
+                onKeyDown={e=>{ if(e.key==='Enter'){ setSearchName(searchInput.trim() || null) } }}
+                placeholder="e.g. TIONG BAHRU"
+                className="flex-1 border rounded px-2 py-1 text-sm"
+              />
+              <button
+                onClick={()=> setSearchName(searchInput.trim() || null)}
+                className="px-3 py-1 border rounded text-blue-600 border-blue-600 bg-blue-50 hover:bg-blue-100 text-sm"
+              >Search</button>
+            </div>
+            {suggestions.length > 0 && (
+              <div className="mt-2 border border-gray-200 rounded">
+                {suggestions.map(n => (
+                  <button
+                    key={n}
+                    onClick={()=>{ setSearchInput(n); setSearchName(n) }}
+                    className="w-full text-left px-2 py-1 text-sm hover:bg-gray-50"
+                  >{n}</button>
+                ))}
+              </div>
+            )}
+            <div className="text-xs text-gray-400 mt-2">Tip: press Enter to go to the first match</div>
+          </div>
+          )}
         </div>
 
         {/* Comparison tray (bottom) */}
@@ -123,20 +216,10 @@ export default function MainPage(){
               const fid = f ? (f.id ?? fp.SUBZONE_N ?? fp.subzone) : null
               const canAddSelected = !f && selected && !inCompare(selected)
               return (
-                <div key={i} className="border border-gray-200 rounded-lg p-3 min-h-[120px] flex items-start justify-between gap-2">
+                <div key={i} className="border border-gray-200 rounded-lg p-3 min-h-[80px] flex items-start justify-between gap-2">
                   {f ? (
                     <>
-                      <div>
-                        <div className="font-semibold">{fp.SUBZONE_N ?? fp.subzone ?? '—'}</div>
-                        <div className="text-xs text-gray-500 mb-2">{fp.PLN_AREA_N ?? fp.planning_area ?? '—'}</div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <Metric label="H" value={normFmt(fp.H_score ?? fp.h_score)} />
-                          <Metric label="Dem" value={numFmt(fp.Dem)} />
-                          <Metric label="Sup" value={numFmt(fp.Sup)} />
-                          <Metric label="Acc" value={numFmt(fp.Acc)} />
-                          <Metric label="Pop" value={intFmt(fp.population)} />
-                        </div>
-                      </div>
+                      <div className="font-semibold">{fp.SUBZONE_N ?? fp.subzone ?? '—'}</div>
                       <button onClick={()=> fid && removeCompareById(String(fid))} className="text-sm text-red-600 hover:text-red-800">Remove</button>
                     </>
                   ) : (
@@ -151,6 +234,18 @@ export default function MainPage(){
               )
             })}
           </div>
+          {compare.length === 2 && (
+            <div className="mt-3 text-right">
+              <button
+                onClick={()=>{
+                  const id1 = String(itemId(compare[0]))
+                  const id2 = String(itemId(compare[1]))
+                  window.location.hash = `#/compare?ids=${encodeURIComponent(id1)},${encodeURIComponent(id2)}`
+                }}
+                className="px-3 py-1.5 border rounded text-white bg-blue-600 hover:bg-blue-700 text-sm"
+              >Compare</button>
+            </div>
+          )}
         </div>
       </div>
     </AppStateProvider>

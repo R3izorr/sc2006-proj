@@ -29,7 +29,7 @@ export default function ChoroplethLayer({ data, selectedId, onSelect }: Props){
     const id = featureId(feature)
     const selected = selectedId && id && String(id) === String(selectedId)
     return selected
-      ? { ...baseStyle, weight: 3, color: '#000', fillOpacity: 0 }
+      ? { ...baseStyle, weight: 3, color: '#fd06b3ff', fillOpacity: 0 }
       : baseStyle
   }
 
@@ -45,11 +45,13 @@ export default function ChoroplethLayer({ data, selectedId, onSelect }: Props){
       layer.openTooltip()
     })
     layer.on('mouseout', () => {
-      layer.setStyle(style(feature))
+      layer.setStyle(baseStyle)
       layer.closeTooltip()
     })
     layer.on('click', () => {
       onSelect?.(feature)
+      // ensure no persistent highlight
+      layer.setStyle(baseStyle)
     })
   }
 
