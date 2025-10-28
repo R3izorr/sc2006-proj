@@ -7,7 +7,9 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     proxy: {
-      '/data': { target: 'http://127.0.0.1:8000', changeOrigin: true }
+      '/data': { target: 'http://127.0.0.1:8000', changeOrigin: true },
+      '/auth': { target: 'http://127.0.0.1:8000', changeOrigin: true },
+      '/admin': { target: 'http://127.0.0.1:8000', changeOrigin: true }
     }
   }
 })

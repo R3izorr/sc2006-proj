@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import FileResponse, JSONResponse
+from sqlalchemy.orm import Session
+
+from ..controllers import data_controller
+from .deps import db_session
 
 router = APIRouter()
 
@@ -29,4 +35,8 @@ def mrt_exits_geojson():
         raise HTTPException(status_code=404, detail="MRT exits GeoJSON not found in content/")
     return FileResponse(str(MRT_EXITS_PATH), media_type="application/geo+json")
 
+@router.get("/opportunity-db.geojson")
+def opportunity_db_geojson(session: Session = Depends(db_session)):
+    fc = data_controller.get_opportunity_geojson(session)
+    return JSONResponse(fc, media_type="application/geo+json")
 

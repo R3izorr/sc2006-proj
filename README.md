@@ -14,48 +14,63 @@ sc2006-proj/
 │       ├── main.py                       # Server entrypoint, CORS, router mounting
 │       ├── db/
 │       │   └── __init__.py               # SQLAlchemy engine + get_session()
-│       ├── controllers/                  # Orchestration layer
-│       │   ├── admin_controller.py       # refresh/list/restore snapshots
-│       │   ├── data_controller.py        # assemble FeatureCollection, list subzones
-│       │   └── auth_controller.py        # login/register/refresh/logout/me
-│       ├── repositories/                 # DB access (CRUD/queries)
+│       ├── controllers/                  # Orchestrates use-cases across services/repos
+│       │   ├── admin_controller.py       # Refresh/list/restore snapshots + export
+│       │   ├── data_controller.py        # Assemble FeatureCollection, list subzones
+│       │   └── auth_controller.py        # Register/login/refresh/logout/me
+│       ├── repositories/                 # Data access layer (DB CRUD/queries)
 │       │   ├── snapshot_repo.py
-│       │   └── subzone_repo.py
-│       ├── models/                       # App/domain models (pydantic or sqlalchemy wrappers)
+│       │   ├── subzone_repo.py
+│       │   └── user_repo.py
+│       ├── models/
 │       │   ├── db_models.py              # SQLAlchemy models: Snapshot, Subzone, User, RefreshToken
-│       │   └── kernel_config.py          # existing
-│       ├── routers/                      # FastAPI routes
-│       │   ├── admin_router.py           # /admin/*
-│       │   ├── data_router.py            # /data/*
-│       │   └── auth_router.py            # /auth/*
-│       ├── schemas/                      # Pydantic request/response DTOs
+│       │   └── kernel_config.py          # (existing)
+│       ├── routers/                      # HTTP endpoints
+│       │   ├── admin_router.py           # /admin/* (JWT admin only)
+│       │   ├── data_router.py            # /data/* (file + DB endpoints)
+│       │   ├── auth_router.py            # /auth/* (login/register/...)
+│       │   └── deps.py                   # FastAPI deps (DB session, JWT guards)
+│       ├── schemas/                      # Pydantic request/response DTOs (expand as needed)
 │       └── services/                     # Business logic
-│           ├── snapshot_service.py       # ingest/export snapshot
-│           ├── auth_service.py           # hash/verify, JWT, refresh tokens
+│           ├── snapshot_service.py       # Ingest/export snapshots
+│           ├── auth_service.py           # Hash/verify, JWT, refresh tokens
 │           └── scoring_service.py        # (optional) server-side compute
 ├── frontend/                             # React + Vite + TypeScript frontend
 │   ├── index.html
 │   ├── package.json
-│   ├── vite.config.ts                    # Dev server + proxy to backend
+│   ├── vite.config.ts                    # Dev server + proxy to backend (/data,/auth,/admin)
 │   └── src/
 │       ├── components/
-│       │   └── Map/                      # MapView, layers (Choropleth, Hawkers, MRT exits)
-│       ├── contexts/                     # App state context
+│       │   └── Map/                      # MapView & layers (Subzones/Hawkers/MRT)
+│       ├── contexts/
 │       ├── screens/
-│       │   ├── MainUI/                   # Main end-user map & exploration UI
-│       │   └── Compare/                  # ComparisonPage (side-by-side)
-│       ├── services/                     # API client wrappers
+│       │   ├── MainUI/                   # Main map & exploration UI
+│       │   ├── Compare/                  # Side-by-side ComparisonPage
+│       │   └── Admin/                    # AdminPage (login, upload, snapshots)
+│       ├── services/                     # API client wrappers (data + admin)
 │       └── utils/                        # Geo helpers, color scales
-├── content/                              # Datasets used by backend
+├── content/                              # Datasets & the exported GeoJSON used by the map
 │   ├── HawkerCentresGEOJSON.geojson
 │   ├── LTAMRTStationExitGEOJSON.geojson
 │   ├── MasterPlan2019SubzoneBoundaryNoSeaGEOJSON.geojson
 │   └── out/
-│       └── hawker_opportunities_ver2.geojson
+│       └── hawker_opportunities_ver2.geojson   # “current” snapshot export
 ├── README.md
 ├── ScoreDemo.py                          # Scoring demo / notebook-style script
 └── solve.py                              # Utility script(s)
 ```
+
+### Folder roles
+- **backend/src/db**: Database engine/session creator; `get_session()` dependency.
+- **backend/src/models**: SQLAlchemy models and any domain-specific config models.
+- **backend/src/repositories**: Pure DB access (CRUD/queries), no HTTP or app logic.
+- **backend/src/services**: Business logic (ingest/export, auth/JWT), reusable by controllers.
+- **backend/src/controllers**: Orchestrates a use-case (start/commit, call services/repos, return DTOs).
+- **backend/src/routers**: FastAPI HTTP endpoints; uses controllers and shared deps/guards.
+- **frontend/src/screens/MainUI**: End‑user map experience (Details, Search, Filter, Compare).
+- **frontend/src/screens/Admin**: Admin console for login, upload FeatureCollection, snapshot list/restore.
+- **frontend/src/screens/Compare**: Side‑by‑side comparison view.
+- **content/out**: Backend writes the exported “current” GeoJSON here; the map fetches this file.
 
 ## Functional Requirements
 
@@ -102,71 +117,80 @@ sc2006-proj/
 - Python
 - Postgres (Neon) — planned for Admin snapshots
 
-## Implementation plan (short, debuggable steps)
+## Run locally (step‑by‑step)
 
-### Phase 0 — Env & DB
-- [ ] Add `.env` with `DATABASE_URL` and `EXPORT_DIR`
-- [ ] Create `backend/src/db/__init__.py` (engine/session, `get_session()`)
-- [ ] Add `backend/sql/001_init.sql` (tables: `snapshots`, `subzones`)
+Prerequisites
+- Python 3.11+ and Node 18+
+- A Neon Postgres database (connection string)
 
-### Phase 1 — Models/Repos
-- [ ] `backend/src/models/db_models.py`: SQLAlchemy `Snapshot`, `Subzone`, `User`, `RefreshToken`
-- [ ] `backend/src/repositories/snapshot_repo.py`:
-  - `create_snapshot(note, by)` → id
-  - `set_current_snapshot(id)` / `get_current_snapshot_id()`
-  - `list_snapshots()` / `restore_snapshot(id)`
-- [ ] `backend/src/repositories/subzone_repo.py`:
-  - `insert_many(subzones, snapshot_id)`
-  - `select_features_fc(snapshot_id)` (assemble rows → features)
-  - `select_subzones(snapshot_id, filters)`
+1) Configure environment
+- Create `.env` at repo root:
+```
+DATABASE_URL=postgresql+psycopg://USER:PASSWORD@YOUR-NEON-HOST:5432/DBNAME?sslmode=require
+JWT_SECRET=change-me-in-production
+EXPORT_DIR=content/out
+```
 
-### Phase 2 — Services (data + auth)
-- [ ] `backend/src/services/snapshot_service.py`:
-  - `bulk_ingest_geojson(gj, snapshot_id)`
-  - `export_current_geojson(snapshot_id, path)`
-- [ ] `backend/src/services/auth_service.py`:
-  - Password hashing (argon2/bcrypt), verify
-  - Issue/verify JWT access tokens
-  - Create/rotate/revoke refresh tokens (store hashed)
-- [ ] (Optional) `backend/src/services/scoring_service.py` for server-side compute
+2) Install backend deps and apply schema
+```
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r backend\requirements.txt
 
-### Phase 3 — Controllers
-- [ ] `backend/src/controllers/admin_controller.py`:
-  - `refresh_snapshot(note, file|raw)` → create → ingest → set current → export
-  - `list_snapshots()`
-  - `restore_snapshot(id)` → set current → export
-- [ ] `backend/src/controllers/data_controller.py`:
-  - `get_opportunity_geojson(current|id)` (DB → FeatureCollection)
-  - `list_subzones(filters)`
-- [ ] `backend/src/controllers/auth_controller.py`:
-  - `register` (admin only)
-  - `login` (issue access + refresh)
-  - `refresh` (rotate refresh, new access)
-  - `logout` (revoke refresh)
-  - `me`
+# Apply DB schema (no psql required)
+python - << 'PY'
+from pathlib import Path
+from dotenv import load_dotenv; load_dotenv()
+import os
+from sqlalchemy import create_engine
+sql = Path('backend/sql/001_init.sql').read_text()
+engine = create_engine(os.environ['DATABASE_URL'], future=True)
+with engine.begin() as c:
+    c.exec_driver_sql(sql)
+print('Schema applied')
+PY
+```
 
-### Phase 4 — Routers
-- [ ] `backend/src/routers/admin_router.py`:
-  - `POST /admin/refresh` (multipart file optional)
-  - `GET /admin/snapshots`
-  - `POST /admin/restore/{id}`
-- [ ] Update `backend/src/routers/data_router.py` to call controller (or keep exporting file path)
-- [ ] `backend/src/routers/auth_router.py`: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/register`, `GET /auth/me`
+3) Create an initial admin user (one‑off)
+```
+python - << 'PY'
+from backend.src.db import get_session
+from backend.src.services.auth_service import hash_password
+from backend.src.repositories.user_repo import create_user
+with get_session() as s:
+    uid = create_user(s, email='admin@example.com', password_hash=hash_password('pass123'), role='admin')
+    print('admin user id:', uid)
+PY
+```
 
-### Phase 5 — Wiring & Guards
-- [ ] Update `backend/src/main.py` to load `.env`, init DB, include routers
-- [ ] Add auth dependency (JWT) and protect admin routes
-- [ ] Verify `GET /data/opportunity.geojson` returns current snapshot (from DB or exported file)
+4) Start backend
+```
+uvicorn backend.src.main:app --host 127.0.0.1 --port 8000 --reload
+# Health check
+curl http://127.0.0.1:8000/healthz
+```
 
-### Phase 6 — Admin UX (optional, minimal)
-- [ ] Login form; store access token (httpOnly cookie or memory)
-- [ ] Simple admin page: upload GeoJSON, list/restore snapshots
-- [ ] After refresh/restore: re-fetch map data (cache-bust already added)
+5) Install frontend deps and run
+```
+cd frontend
+npm install
+npm run dev
+# Open http://127.0.0.1:5173
+```
 
-### Test checklist
-- [ ] Login works; protected routes require JWT
-- [ ] Upload GeoJSON → snapshot created, current set, file exported
-- [ ] Map loads new data at `/data/opportunity.geojson`
-- [ ] List snapshots returns history; restore switches current and re-exports
-- [ ] Filters/search still work
+6) Admin workflow (UI)
+- Open `http://127.0.0.1:5173/#/admin`.
+- Login with the admin user.
+- Paste a valid FeatureCollection JSON and click “Refresh Dataset”.
+  - Backend ingests rows into Neon, marks the snapshot current, and exports `content/out/hawker_opportunities_ver2.geojson`.
+- Use the Snapshots list to restore any snapshot.
+- Click “Back to Map” to see the latest export on the map. The frontend fetches `/data/opportunity.geojson` with cache‑busting.
+
+7) Useful API endpoints
+- `/auth/login` (POST) — get access/refresh tokens
+- `/admin/refresh` (POST, admin) — ingest FeatureCollection, set current, export file
+- `/admin/snapshots` (GET, admin) — list snapshots
+- `/admin/snapshots/{id}/restore` (POST, admin) — change current + export
+- `/data/opportunity.geojson` (GET) — exported “current” FeatureCollection
+- `/data/opportunity-db.geojson` (GET) — FeatureCollection assembled from DB
 

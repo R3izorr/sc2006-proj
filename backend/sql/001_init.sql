@@ -14,6 +14,10 @@ CREATE TABLE IF NOT EXISTS snapshots (
 CREATE UNIQUE INDEX IF NOT EXISTS unique_current_snapshot
     ON snapshots ((CASE WHEN is_current THEN 1 ELSE NULL END));
 
+-- Optional metadata columns used by ORM
+ALTER TABLE IF EXISTS snapshots ADD COLUMN IF NOT EXISTS config_json JSONB;
+ALTER TABLE IF EXISTS snapshots ADD COLUMN IF NOT EXISTS source_meta_json JSONB;
+
 -- Subzone rows for each snapshot
 CREATE TABLE IF NOT EXISTS subzones (
     snapshot_id UUID NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE,

@@ -15,3 +15,47 @@ export async function fetchMrtExitsGeoJSON() {
   if (!r.ok) throw new Error('Failed to load MRT exits geojson')
   return r.json()
 }
+
+// --- Admin/Auth API ---
+
+export type LoginResponse = {
+  access_token: string
+  access_expires_at: number
+  refresh_token: string
+  refresh_expires_at: number
+  user: { id: string, email: string, role: string }
+}
+
+export async function apiLogin(email: string, password: string): Promise<LoginResponse> {
+  const r = await fetch('/auth/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+  if(!r.ok) throw new Error('Login failed')
+  return r.json()
+}
+
+export async function apiListSnapshots(token: string){
+  const r = await fetch('/admin/snapshots', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  if(!r.ok) throw new Error('Failed to list snapshots')
+  return r.json()
+}
+
+export async function apiRefreshGeoJSON(token: string, geojson: any, note?: string){
+  const r = await fetch('/admin/refresh', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ geojson, note })
+  })
+  if(!r.ok) throw new Error('Failed to refresh data')
+  return r.json()
+}
+
+export async function apiRestoreSnapshot(token: string, snapshotId: string){
+  const r = await fetch(`/admin/snapshots/${encodeURIComponent(snapshotId)}/restore`, {
+    method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+  })
+  if(!r.ok) throw new Error('Failed to restore snapshot')
+  return r.json()
+}

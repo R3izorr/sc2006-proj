@@ -73,7 +73,9 @@ class Subzone(Base):
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
+    id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False), primary_key=True, server_default=text("gen_random_uuid()")
+    )
     email: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     role: Mapped[str] = mapped_column(String(16), nullable=False, default="user")
@@ -89,7 +91,9 @@ class User(Base):
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
-    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
+    id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False), primary_key=True, server_default=text("gen_random_uuid()")
+    )
     user_id: Mapped[str] = mapped_column(UUID(as_uuid=False), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     token_hash: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
