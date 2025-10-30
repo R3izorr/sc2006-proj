@@ -1,11 +1,9 @@
 import React, { useMemo, useState } from 'react'
 import MapView from '../../components/Map/MapView'
-import { apiLogout } from '../../services/api'
 import { AppStateProvider } from '../../contexts/AppStateContext'
 
 export default function MainPage(){
   const [selected, setSelected] = useState<any | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const [compare, setCompare] = useState<any[]>([])
   const [tab, setTab] = useState<'details'|'search'|'filter'>('details')
   const [searchInput, setSearchInput] = useState<string>('')
@@ -81,16 +79,48 @@ export default function MainPage(){
   }
   function clearCompare(){ setCompare([]) }
 
-  const isLoggedIn = typeof window !== 'undefined' && !!localStorage.getItem('accessToken')
-  const isAdmin = typeof window !== 'undefined' && (localStorage.getItem('userRole') || '').toLowerCase() === 'admin'
-  async function handleLogout(){
-    const rt = localStorage.getItem('refreshToken') || ''
-    await apiLogout(rt)
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('userEmail')
-    localStorage.removeItem('userRole')
-    window.location.replace('#/login')
+  
+
+  async function ensureJsPDF(): Promise<any>{
+    const w: any = window as any
+    if(w.jspdf && w.jspdf.jsPDF) return w.jspdf.jsPDF
+    await new Promise<void>((resolve, reject)=>{
+      const s = document.createElement('script')
+      s.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'
+      s.onload = () => resolve()
+      s.onerror = () => reject(new Error('Failed to load jsPDF'))
+      document.head.appendChild(s)
+    })
+    return (window as any).jspdf.jsPDF
+  }
+
+  async function exportSubzonePdf(){
+    if(!selected) return
+    const jsPDF = await ensureJsPDF()
+    const doc = new jsPDF()
+    const pad = 14
+    let y = 16
+    const title = String(name || 'Subzone')
+    doc.setFontSize(18); doc.text(title, pad, y); y += 8
+    doc.setFontSize(11)
+    doc.text(`Region: ${String(planning || '—')}`, pad, y); y += 6
+    doc.text(`Rank: ${String(rank ?? '—')}`, pad, y); y += 6
+    doc.text(`H_Score: ${String(h)}`, pad, y); y += 6
+    doc.text(`Population (total): ${String(pop)}`, pad, y); y += 8
+    doc.setFontSize(12); doc.text('Population by age group', pad, y); y += 6
+    doc.setFontSize(11)
+    doc.text(`0–24: ${Math.round(Number(p.pop_0_25 ?? 0)).toLocaleString()}`, pad, y); y += 6
+    doc.text(`25–64: ${Math.round(Number(p.pop_25_65 ?? 0)).toLocaleString()}`, pad, y); y += 6
+    doc.text(`65+: ${Math.round(Number(p.pop_65plus ?? 0)).toLocaleString()}`, pad, y); y += 8
+    doc.setFontSize(12); doc.text('Nearby amenities', pad, y); y += 6
+    doc.setFontSize(11)
+    doc.text(`MRT exits: ${String(mrt)}`, pad, y); y += 6
+    doc.text(`Bus stops: ${String(bus)}`, pad, y); y += 6
+    doc.text(`Hawker centres: ${String(hawker)}`, pad, y); y += 10
+    const ts = new Date().toLocaleString()
+    doc.setFontSize(9); doc.text(`Generated on ${ts}`, pad, y)
+    const fileSafe = title.replace(/[^a-z0-9\-_.]+/gi, '_')
+    doc.save(`${fileSafe || 'subzone'}.pdf`)
   }
 
   return (
@@ -133,10 +163,11 @@ export default function MainPage(){
                   total={popTotal}
                 />
               </div>
-              <div className="mt-2">
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 <button onClick={()=>toggleCompare(selected)} className={`w-full border py-1.5 rounded-md ${inCompare(selected) ? 'border-red-600 text-red-600 bg-red-50 hover:bg-red-100' : 'border-blue-600 text-blue-600 bg-blue-50 hover:bg-blue-100'}`}>
-                  {inCompare(selected) ? '− Remove from Comparison' : '+ Add to Comparison'}
+                  {inCompare(selected) ? '− Remove from Comparison' : 'Add to Comparison'}
                 </button>
+                <button onClick={exportSubzonePdf} className="w-full border py-1.5 rounded-md border-gray-300 hover:bg-gray-50">Export PDF</button>
               </div>
             </div>
             <div className="text-right">
@@ -220,7 +251,7 @@ export default function MainPage(){
         {/* Comparison tray (bottom) */}
         <div className="absolute left-2 right-2 bottom-2 bg-white rounded-md shadow p-3 z-[1000]">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="m-0 text-[16px] font-semibold">Comparison (max 2)</h3>
+            <h3 className="m-0 text-[16px] font-semibold">Comparison Tray (max 2)</h3>
             <button onClick={clearCompare} className="text-sm text-gray-600 hover:text-gray-900">Clear</button>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -261,22 +292,6 @@ export default function MainPage(){
             </div>
           )}
         </div>
-        {isLoggedIn && (
-          <div className="absolute top-2 right-2 z-[1100] flex gap-2">
-            {isAdmin && (
-              <button onClick={()=>{ window.location.hash = '#/admin' }} className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm opacity-90 hover:opacity-100">Admin Console</button>
-            )}
-            <div className="relative">
-              <button onClick={()=> setSettingsOpen(o=>!o)} className="px-3 py-1.5 rounded bg-gray-800 text-white text-sm opacity-90 hover:opacity-100">Settings</button>
-              {settingsOpen && (
-                <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded shadow">
-                  <button onClick={()=>{ setSettingsOpen(false); window.location.hash = '#/profile' }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Profile</button>
-                  <button onClick={()=>{ setSettingsOpen(false); handleLogout() }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Logout</button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </AppStateProvider>
   )

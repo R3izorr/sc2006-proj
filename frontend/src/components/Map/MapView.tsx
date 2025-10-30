@@ -4,10 +4,12 @@ import type { LatLngExpression } from 'leaflet'
 import L from 'leaflet'
 import type { FeatureCollection, Geometry } from 'geojson'
 import 'leaflet/dist/leaflet.css'
-import { fetchOpportunityGeoJSON, fetchHawkerCentresGeoJSON, fetchMrtExitsGeoJSON, apiLogout } from '../../services/api'
+import { fetchOpportunityGeoJSON, fetchHawkerCentresGeoJSON, fetchMrtExitsGeoJSON, fetchBusStopsGeoJSON, apiLogout } from '../../services/api'
 import ChoroplethLayer from './ChoroplethLayer'
+import HeatMapLayer from './HeatMapLayer'
 import HawkerCentresLayer from './HawkerCentresLayer'
 import MrtExitsLayer from './MrtExitsLayer'
+import BusStopsLayer from './BusStopsLayer'
 import Toolbar from './Toolbar'
 import { buildNameIndex, getSubzoneName, getPlanningAreaName, topQuantile } from '../../utils/geo'
 
@@ -29,9 +31,13 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
   const [hawkers, setHawkers] = useState<any>(null)
   const [names, setNames] = useState<string[]>([])
   const [mrtExits, setMrtExits] = useState<any>(null)
+  const [busStops, setBusStops] = useState<any>(null)
   const nameIndexRef = useRef<Map<string,string>>(new Map())
   const mapRef = useRef<L.Map | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [viewOpen, setViewOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'boundaries'|'heat'>('boundaries')
+  const isAdmin = typeof window !== 'undefined' && (localStorage.getItem('userRole') || '').toLowerCase() === 'admin'
   const isLoggedIn = typeof window !== 'undefined' && !!localStorage.getItem('accessToken')
 
   useEffect(()=>{
@@ -79,6 +85,7 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
     }).catch(console.error)
     fetchHawkerCentresGeoJSON().then(setHawkers).catch(console.error)
     fetchMrtExitsGeoJSON().then(setMrtExits).catch(console.error)
+    fetchBusStopsGeoJSON().then(setBusStops).catch(console.error)
   },[])
 
   const center = useMemo<LatLngExpression>(()=>[1.3521, 103.8198],[])
@@ -219,6 +226,51 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
     return { type: 'FeatureCollection', features: feats }
   }, [mrtExits, selectedGeometry])
 
+  // Some bus datasets store lat/lon in properties; accept either geometry or props
+  function pointFromFeature(f: any): [number, number] | null {
+    const props = f?.properties || {}
+    const toNum = (v: any) => { const n = Number(v); return Number.isFinite(n) ? n : null }
+    const latKeys = ['lat','latitude','Lat','Latitude','LAT']
+    const lonKeys = ['lon','lng','long','longitude','Lon','Lng','Long','Longitude','LON','LNG']
+    let lat: number | null = null, lon: number | null = null
+    for(const k of latKeys){ if(props[k] !== undefined){ lat = toNum(props[k]); if(lat !== null) break } }
+    for(const k of lonKeys){ if(props[k] !== undefined){ lon = toNum(props[k]); if(lon !== null) break } }
+    if(lat !== null && lon !== null) return [lon, lat]
+    // Fallback to geometry if looks like WGS84 lon/lat
+    const c = f?.geometry?.coordinates
+    if (Array.isArray(c) && c.length >= 2) {
+      const x = Number(c[0]); const y = Number(c[1])
+      if (Number.isFinite(x) && Number.isFinite(y) && Math.abs(x) <= 180 && Math.abs(y) <= 90) {
+        return [x, y]
+      }
+    }
+    return null
+  }
+
+  function featureWithWgs84Point(f: any): any {
+    const pt = pointFromFeature(f)
+    if(!pt) return null
+    // Clone with corrected geometry
+    return {
+      type: 'Feature',
+      properties: { ...(f?.properties || {}) },
+      geometry: { type: 'Point', coordinates: pt }
+    }
+  }
+
+  const busInSelected = useMemo<any | null>(() => {
+    if (!selectedGeometry || !busStops) return null
+    const bbox = geometryBBox(selectedGeometry)
+    const feats = (busStops.features || []).map((f:any)=>{
+      const pt = pointFromFeature(f)
+      if(!pt) return null
+      if (!pointInBBox(pt, bbox)) return null
+      if (!pointInPolygon(pt, selectedGeometry)) return null
+      return featureWithWgs84Point(f)
+    }).filter(Boolean)
+    return { type: 'FeatureCollection', features: feats as any }
+  }, [busStops, selectedGeometry])
+
   function handleFilter(pct: 'all'|0.5|0.25|0.1){
     if(!raw) return
     if(pct==='all') { setFiltered(raw); return }
@@ -276,7 +328,11 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
     <div style={{ height: '100%', position: 'relative' }}>
       <MapContainer center={center} zoom={11} style={{ height: '100%' }} ref={mapRef as any}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" {...({ attribution: '© OpenStreetMap' } as any)} />
-        {filtered && <ChoroplethLayer data={filtered} selectedId={selectedId} onSelect={onSelect} />}
+        {filtered && (viewMode==='boundaries' ? (
+          <ChoroplethLayer data={filtered} selectedId={selectedId} onSelect={onSelect} />
+        ) : (
+          <HeatMapLayer data={filtered} selectedId={selectedId} onSelect={onSelect} />
+        ))}
         {/* Only render points within selected subzone; hide when none selected */}
         {hawkersInSelected && hawkersInSelected.features.length > 0 && (
           <HawkerCentresLayer key={`hawkers-${selectedId ?? 'none'}`} data={hawkersInSelected} />
@@ -284,11 +340,29 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
         {mrtInSelected && mrtInSelected.features.length > 0 && (
           <MrtExitsLayer key={`mrt-${selectedId ?? 'none'}`} data={mrtInSelected} />
         )}
+        {busInSelected && busInSelected.features.length > 0 && (
+          <BusStopsLayer key={`bus-${selectedId ?? 'none'}`} data={busInSelected} />
+        )}
       </MapContainer>
       <Toolbar names={names} onSearch={handleSearch} onFilter={handleFilter} />
       {/* Settings dropdown (top-right) */}
       {isLoggedIn && (
-      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 1000 }}>
+      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 1000, display: 'flex', gap: 8 }}>
+        {/* Admin console (only for admins) */}
+        {isAdmin && (
+          <button onClick={()=>{ window.location.hash = '#/admin' }} className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm opacity-90 hover:opacity-100">Admin Console</button>
+        )}
+        {/* View options */}
+        <div style={{ position: 'relative' }}>
+          <button onClick={()=> setViewOpen(o=>!o)} className="px-3 py-1.5 rounded bg-gray-700 text-white text-sm opacity-90 hover:opacity-100">View</button>
+          {viewOpen && (
+            <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded shadow">
+              <button onClick={()=>{ setViewMode('boundaries'); setViewOpen(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${viewMode==='boundaries' ? 'bg-gray-50' : ''}`}>Boundaries</button>
+              <button onClick={()=>{ setViewMode('heat'); setViewOpen(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${viewMode==='heat' ? 'bg-gray-50' : ''}`}>Heat Map</button>
+            </div>
+          )}
+        </div>
+        {/* Settings */}
         <div style={{ position: 'relative' }}>
           <button onClick={()=> setMenuOpen(o=>!o)} className="px-3 py-1.5 rounded bg-gray-800 text-white text-sm opacity-90 hover:opacity-100">Settings</button>
           {menuOpen && (

@@ -16,6 +16,12 @@ export async function fetchMrtExitsGeoJSON() {
   return r.json()
 }
 
+export async function fetchBusStopsGeoJSON() {
+  const r = await fetch(`/data/bus-stops.geojson?t=${Date.now()}`, { cache: 'no-store' })
+  if (!r.ok) throw new Error('Failed to load bus stops geojson')
+  return r.json()
+}
+
 // --- Admin/Auth API ---
 
 export type LoginResponse = {
