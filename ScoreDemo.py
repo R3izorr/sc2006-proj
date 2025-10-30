@@ -17,7 +17,7 @@ POP  = "content/ResidentPopulationbyPlanningAreaSubzoneofResidenceAgeGroupandSex
 HAWK = "content/HawkerCentresGEOJSON.geojson"
 MRT  = "content/LTAMRTStationExitGEOJSON.geojson"    # exits, CRS84/WGS84
 BUS  = "content/bus_stops.geojson"                    # your sample is EPSG:3414
-OUT  = "content/out/hawker_opportunities_ver2.geojson"           # (requested spelling)
+OUT  = "hawker_opportunities_ver2.geojson"           # (requested spelling)
 
 # ------------- Helpers -------------
 def parse_from_desc(html: str, key: str):
@@ -178,18 +178,28 @@ def main():
     for c in ["hawker","mrt","bus"]:
         gdf[c] = gdf[c].fillna(0).astype(int)
 
-    # 7) Population + H_score (simple: demand vs supply)
+    # 7) Population + Accessibility + H_score (demand vs supply plus access)
     pop = load_population(POP)  # columns: subzone, population
     gdf = gdf.merge(pop, on="subzone", how="left")
 
-    # H_score = normalized ( w_dem*Z(population) - w_sup*Z(hawker) )
-    w_dem, w_sup = 0.6, 0.4
+    # Accessibility proxy: combine mrt and bus counts (simple count-based access)
+    # If either column is missing, treat as 0. This avoids NaNs propagating.
+    gdf["_mrt_for_acc"] = pd.to_numeric(gdf.get("mrt", 0), errors="coerce").fillna(0)
+    gdf["_bus_for_acc"] = pd.to_numeric(gdf.get("bus", 0), errors="coerce").fillna(0)
+    gdf["Acc"] = gdf["_mrt_for_acc"] + gdf["_bus_for_acc"]
+
+    # H_score = normalized ( w_dem*Z(population) - w_sup*Z(hawker) + w_acc*Z(access) )
+    # Rebalance weights to include accessibility
+    w_dem, w_sup, w_acc = 0.5, 0.3, 0.2
     Z_Dem = zscore(gdf["population"])
     Z_Sup = zscore(gdf["hawker"])
-    H_raw = w_dem*Z_Dem - w_sup*Z_Sup
+    Z_Acc = zscore(gdf["Acc"])
+    H_raw = w_dem*Z_Dem - w_sup*Z_Sup + w_acc*Z_Acc
     hmin, hmax = H_raw.min(skipna=True), H_raw.max(skipna=True)
     gdf["H_score"] = 0.5 if (pd.isna(hmin) or pd.isna(hmax) or hmin==hmax) else (H_raw - hmin) / (hmax - hmin)
-
+    gdf["Dem"] = Z_Dem
+    gdf["Sup"] = Z_Sup
+    gdf["Acc"] = Z_Acc
     # Ranking
     gdf["H_rank"] = (
         gdf["H_score"]
@@ -202,12 +212,13 @@ def main():
 
     # 8) Final field order + export (WGS84)
     # Keep as GeoDataFrame to maintain geometry column
-    gdf_out = gdf[["name","subzone","planarea","population","pop_0_25","pop_25_65","pop_65plus","hawker","mrt","bus","H_score","H_rank","geometry"]].copy()
+    # Export without intermediate Acc field
+    gdf_out = gdf[["name","subzone","planarea","population","pop_0_25","pop_25_65","pop_65plus","hawker","mrt","bus","H_score","H_rank","geometry","Dem","Sup","Acc"]].copy()
     gdf_out = gdf_out.to_crs(4326)
     gdf_out.to_file(OUT, driver="GeoJSON")
 
     print(f"[ok] wrote {OUT} with {len(gdf_out)} features.")
-    print(gdf_out[["name","subzone","planarea","population","pop_0_25","pop_25_65","pop_65plus","hawker","mrt","bus","H_score","H_rank"]]
+    print(gdf_out[["name","subzone","planarea","population","pop_0_25","pop_25_65","pop_65plus","hawker","mrt","bus","H_score","H_rank","Dem","Sup","Acc"]]
           .head(10).to_string(index=False))
 
 if __name__ == "__main__":

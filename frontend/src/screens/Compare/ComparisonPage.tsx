@@ -35,7 +35,7 @@ export default function ComparisonPage(){
     return list
   }, [gj, ids])
 
-  function goBack(){ window.location.hash = '' }
+  function goBack(){ window.location.hash = '#/map' }
 
   return (
     <div className="h-full p-4">
@@ -104,6 +104,9 @@ function renderCompareRows(items: any[]){
   const p1 = items[1]?.properties ?? {}
   const rows: Array<{ label: string, a: number | null, b: number | null, fmt: (v:any)=>string }>= [
     { label: 'H_score', a: numOrNull(p0.H_score ?? p0.h_score), b: numOrNull(p1.H_score ?? p1.h_score), fmt: fmtNum },
+    { label: 'Z_Dem', a: numOrNull(p0.Dem ?? p0.dem), b: numOrNull(p1.Dem ?? p1.dem), fmt: fmtNum },
+    { label: 'Z_Sup', a: numOrNull(p0.Sup ?? p0.sup), b: numOrNull(p1.Sup ?? p1.sup), fmt: fmtNum },
+    { label: 'Z_Acc', a: numOrNull(p0.Acc ?? p0.acc), b: numOrNull(p1.Acc ?? p1.acc), fmt: fmtNum },
     { label: 'Total population', a: numOrNull(p0.population), b: numOrNull(p1.population), fmt: fmtInt },
     { label: 'No. of MRT', a: numOrNull(p0.mrt), b: numOrNull(p1.mrt), fmt: fmtInt },
     { label: 'No. of Bus stops', a: numOrNull(p0.bus), b: numOrNull(p1.bus), fmt: fmtInt },
