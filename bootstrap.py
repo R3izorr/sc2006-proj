@@ -34,9 +34,7 @@ def apply_schema():
     if not url:
         raise SystemExit("ERROR: DATABASE_URL missing in .env")
     
-    # Convert psycopg3 URL to psycopg2 format if needed
-    if url.startswith("postgresql+psycopg://"):
-        url = url.replace("postgresql+psycopg://", "postgresql+psycopg2://")
+    # Using psycopg v3 (psycopg[binary]) with SQLAlchemy dialect 'postgresql+psycopg'
     
     try:
         sql = SCHEMA_SQL.read_text(encoding="utf-8")
