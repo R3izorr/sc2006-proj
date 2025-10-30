@@ -35,6 +35,18 @@ export async function apiLogin(email: string, password: string): Promise<LoginRe
   return r.json()
 }
 
+export async function apiRegister(email: string, password: string): Promise<{ user_id: string }>{
+  const r = await fetch('/auth/register', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+  if(!r.ok){
+    const msg = await r.text().catch(()=>null)
+    throw new Error(msg || 'Registration failed')
+  }
+  return r.json()
+}
+
 export async function apiListSnapshots(token: string){
   const r = await fetch('/admin/snapshots', {
     headers: { 'Authorization': `Bearer ${token}` }
@@ -58,4 +70,14 @@ export async function apiRestoreSnapshot(token: string, snapshotId: string){
   })
   if(!r.ok) throw new Error('Failed to restore snapshot')
   return r.json()
+}
+
+export async function apiLogout(refreshToken: string){
+  // Best-effort: revoke refresh token; ignore errors
+  try{
+    await fetch('/auth/logout', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    })
+  } catch {}
 }

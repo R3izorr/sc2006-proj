@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { apiLogin, apiListSnapshots, apiRefreshGeoJSON, apiRestoreSnapshot, type LoginResponse } from '../../services/api'
+import { apiLogin, apiListSnapshots, apiRefreshGeoJSON, apiRestoreSnapshot, apiLogout, type LoginResponse } from '../../services/api'
 
 export default function AdminPage(){
   const [token, setToken] = useState<string>(()=> localStorage.getItem('accessToken') || '')
@@ -56,16 +56,22 @@ export default function AdminPage(){
     } finally { setBusy(false) }
   }
 
-  function logout(){
+  async function logout(){
+    const rt = localStorage.getItem('refreshToken') || ''
+    await apiLogout(rt)
     setToken('')
     localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('userEmail')
+    localStorage.removeItem('userRole')
+    window.location.hash = '#/login'
   }
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-3">
         <h1 className="m-0 text-[20px] font-semibold">Admin</h1>
-        <a href="#/" className="text-blue-600">Back to Map</a>
+        <a href="#/map" className="text-blue-600">View Map</a>
       </div>
       {!authed ? (
         <form onSubmit={handleLogin} className="border border-gray-200 rounded p-3 max-w-md">
@@ -82,11 +88,6 @@ export default function AdminPage(){
         </form>
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <div className="text-sm text-gray-600">Logged in</div>
-            <button onClick={logout} className="px-2 py-1 border rounded text-sm">Logout</button>
-          </div>
-
           <div className="border border-gray-200 rounded p-3">
             <div className="text-sm font-semibold mb-2">Upload GeoJSON</div>
             <div className="grid grid-cols-1 gap-2">

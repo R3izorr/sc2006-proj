@@ -194,3 +194,42 @@ npm run dev
 - `/data/opportunity.geojson` (GET) — exported “current” FeatureCollection
 - `/data/opportunity-db.geojson` (GET) — FeatureCollection assembled from DB
 
+## Frontend routes and flows
+
+- `#/home` — HomePage: project overview and references (data sources, methodology). Buttons: Sign in → `#/login`, Register → `#/register`.
+- `#/login` — LoginPage: shared for Admin and Client. After login: Admin → `#/admin`, Client → `#/` (Map).
+- `#/register` — RegisterPage: client registration. Creates a client account in Neon Postgres via `/auth/register`. On success, redirect to `#/login`.
+- `#/` — Map (MainPage/MapView).
+- `#/admin` — AdminPage (guarded; non‑admin redirected to `#/login`).
+- `#/compare` — ComparisonPage.
+
+## Implementation plan (phases)
+
+### Phase 1 — Public map MVP
+- Home page (`#/home`) with platform overview and references. Primary buttons: Sign in and Register.
+- Map experience (`#/`) with subzone selection, details, search and filters.
+- MRT exits and hawker layers filtered by selected subzone, optimized with bbox prefilter.
+
+### Phase 2 — Authentication and roles
+- Login page (`#/login`) used by both Admin and Client via `/auth/login`.
+- Redirect after login: Admin accounts → `#/admin`; Client accounts → `#/` (Map).
+- Registration page (`#/register`) for client sign‑up; persists to Neon DB; after register go to `#/login`.
+- Store tokens and user info in `localStorage`.
+- Simple admin guard in app router: non‑admin visits to `#/admin` are redirected to `#/login`.
+
+### Phase 3 — Admin console completion
+- Upload FeatureCollection and trigger refresh/export.
+- List and restore snapshots.
+- Post‑refresh warm‑load of `/data/opportunity.geojson`.
+
+### Phase 4 — Polish and enhancements
+- Replace AdminPage inline login with shared LoginPage (optional cleanup).
+- Add persistent auth context with refresh flow and logout everywhere.
+- Improve UI: theming, mobile responsiveness, accessibility passes.
+- Performance: caching filtered points per subzone, marker clustering.
+
+### Phase 5 — Backlog
+- Registration and password reset flows.
+- Server‑side scoring service and scheduled snapshots.
+- Export subzone details as PDF/PNG.
+

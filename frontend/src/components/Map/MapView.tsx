@@ -4,7 +4,7 @@ import type { LatLngExpression } from 'leaflet'
 import L from 'leaflet'
 import type { FeatureCollection, Geometry } from 'geojson'
 import 'leaflet/dist/leaflet.css'
-import { fetchOpportunityGeoJSON, fetchHawkerCentresGeoJSON, fetchMrtExitsGeoJSON } from '../../services/api'
+import { fetchOpportunityGeoJSON, fetchHawkerCentresGeoJSON, fetchMrtExitsGeoJSON, apiLogout } from '../../services/api'
 import ChoroplethLayer from './ChoroplethLayer'
 import HawkerCentresLayer from './HawkerCentresLayer'
 import MrtExitsLayer from './MrtExitsLayer'
@@ -31,6 +31,8 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
   const [mrtExits, setMrtExits] = useState<any>(null)
   const nameIndexRef = useRef<Map<string,string>>(new Map())
   const mapRef = useRef<L.Map | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const isLoggedIn = typeof window !== 'undefined' && !!localStorage.getItem('accessToken')
 
   useEffect(()=>{
     fetchOpportunityGeoJSON().then(gj => {
@@ -80,6 +82,142 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
   },[])
 
   const center = useMemo<LatLngExpression>(()=>[1.3521, 103.8198],[])
+
+  // --- Geometry helpers (point-in-polygon for Polygon / MultiPolygon) ---
+  // Boundary is considered inside (inclusive)
+  function pointOnSegment(p: [number, number], a: [number, number], b: [number, number], eps = 1e-8): boolean {
+    const [px, py] = p
+    const [ax, ay] = a
+    const [bx, by] = b
+    // Colinearity via cross product magnitude
+    const cross = (py - ay) * (bx - ax) - (px - ax) * (by - ay)
+    if (Math.abs(cross) > eps) return false
+    // Within segment bounds via dot product
+    const dot = (px - ax) * (px - bx) + (py - ay) * (py - by)
+    return dot <= eps
+  }
+
+  function pointOnRing(point: [number, number], ring: number[][], eps = 1e-8): boolean {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const a = ring[j] as [number, number]
+      const b = ring[i] as [number, number]
+      if (pointOnSegment(point, a, b, eps)) return true
+    }
+    return false
+  }
+
+  function pointInRing(point: [number, number], ring: number[][]): boolean {
+    if (pointOnRing(point, ring)) return true
+    const x = point[0]
+    const y = point[1]
+    let inside = false
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0], yi = ring[i][1]
+      const xj = ring[j][0], yj = ring[j][1]
+      const intersects = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / ((yj - yi) || 1e-12) + xi)
+      if (intersects) inside = !inside
+    }
+    return inside
+  }
+
+  function pointInPolygon(point: [number, number], geometry: Geometry | null | undefined): boolean {
+    if (!geometry) return false
+    if (geometry.type === 'Polygon') {
+      const coords = geometry.coordinates as number[][][]
+      const outer = coords[0]
+      if (!outer) return false
+      if (!pointInRing(point, outer)) return false
+      for (let i = 1; i < coords.length; i++) {
+        // If on the hole boundary, treat as inside the polygon (inclusive)
+        if (pointInRing(point, coords[i])) return false
+      }
+      return true
+    }
+    if (geometry.type === 'MultiPolygon') {
+      const polys = geometry.coordinates as number[][][][]
+      for (const poly of polys) {
+        const outer = poly[0]
+        if (!outer) continue
+        if (pointInRing(point, outer)) {
+          let inHole = false
+          for (let i = 1; i < poly.length; i++) {
+            if (pointInRing(point, poly[i])) { inHole = true; break }
+          }
+          if (!inHole) return true
+        }
+      }
+      return false
+    }
+    return false
+  }
+
+  // Fast bbox filter before polygon test
+  function geometryBBox(geometry: Geometry | null | undefined): [number, number, number, number] | null {
+    if (!geometry) return null
+    let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity
+    const update = (x: number, y: number) => {
+      if (x < minx) minx = x
+      if (y < miny) miny = y
+      if (x > maxx) maxx = x
+      if (y > maxy) maxy = y
+    }
+    if (geometry.type === 'Polygon') {
+      const coords = geometry.coordinates as number[][][]
+      for (const ring of coords) for (const p of ring) update(p[0], p[1])
+    } else if (geometry.type === 'MultiPolygon') {
+      const polys = geometry.coordinates as number[][][][]
+      for (const poly of polys) for (const ring of poly) for (const p of ring) update(p[0], p[1])
+    } else {
+      return null
+    }
+    if (!Number.isFinite(minx) || !Number.isFinite(miny) || !Number.isFinite(maxx) || !Number.isFinite(maxy)) return null
+    return [minx, miny, maxx, maxy]
+  }
+
+  function pointInBBox(point: [number, number], bbox: [number, number, number, number] | null): boolean {
+    if (!bbox) return false
+    const [minx, miny, maxx, maxy] = bbox
+    const [x, y] = point
+    return x >= minx && x <= maxx && y >= miny && y <= maxy
+  }
+
+  // Selected subzone geometry (by selectedId)
+  const selectedGeometry = useMemo<Geometry | null>(() => {
+    if (!raw || !selectedId) return null
+    const feat = (raw.features || []).find((f:any)=>{
+      const p = f?.properties || {}
+      const id = f?.id ?? p.SUBZONE_N ?? p.subzone
+      return id && String(id) === String(selectedId)
+    })
+    return (feat?.geometry as Geometry) || null
+  }, [raw, selectedId])
+
+  // Filter auxiliary point layers to only points inside selected polygon
+  const hawkersInSelected = useMemo<any | null>(() => {
+    if (!selectedGeometry || !hawkers) return null
+    const bbox = geometryBBox(selectedGeometry)
+    const feats = (hawkers.features || []).filter((f:any)=>{
+      const c = f?.geometry?.coordinates
+      if (!Array.isArray(c) || c.length < 2) return false
+      const pt: [number, number] = [Number(c[0]), Number(c[1])]
+      if (!pointInBBox(pt, bbox)) return false
+      return pointInPolygon(pt, selectedGeometry)
+    })
+    return { type: 'FeatureCollection', features: feats }
+  }, [hawkers, selectedGeometry])
+
+  const mrtInSelected = useMemo<any | null>(() => {
+    if (!selectedGeometry || !mrtExits) return null
+    const bbox = geometryBBox(selectedGeometry)
+    const feats = (mrtExits.features || []).filter((f:any)=>{
+      const c = f?.geometry?.coordinates
+      if (!Array.isArray(c) || c.length < 2) return false
+      const pt: [number, number] = [Number(c[0]), Number(c[1])]
+      if (!pointInBBox(pt, bbox)) return false
+      return pointInPolygon(pt, selectedGeometry)
+    })
+    return { type: 'FeatureCollection', features: feats }
+  }, [mrtExits, selectedGeometry])
 
   function handleFilter(pct: 'all'|0.5|0.25|0.1){
     if(!raw) return
@@ -139,10 +277,29 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
       <MapContainer center={center} zoom={11} style={{ height: '100%' }} ref={mapRef as any}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" {...({ attribution: '© OpenStreetMap' } as any)} />
         {filtered && <ChoroplethLayer data={filtered} selectedId={selectedId} onSelect={onSelect} />}
-        {hawkers && <HawkerCentresLayer data={hawkers} />}
-        {mrtExits && <MrtExitsLayer data={mrtExits} />}
+        {/* Only render points within selected subzone; hide when none selected */}
+        {hawkersInSelected && hawkersInSelected.features.length > 0 && (
+          <HawkerCentresLayer key={`hawkers-${selectedId ?? 'none'}`} data={hawkersInSelected} />
+        )}
+        {mrtInSelected && mrtInSelected.features.length > 0 && (
+          <MrtExitsLayer key={`mrt-${selectedId ?? 'none'}`} data={mrtInSelected} />
+        )}
       </MapContainer>
       <Toolbar names={names} onSearch={handleSearch} onFilter={handleFilter} />
+      {/* Settings dropdown (top-right) */}
+      {isLoggedIn && (
+      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 1000 }}>
+        <div style={{ position: 'relative' }}>
+          <button onClick={()=> setMenuOpen(o=>!o)} className="px-3 py-1.5 rounded bg-gray-800 text-white text-sm opacity-90 hover:opacity-100">Settings</button>
+          {menuOpen && (
+            <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded shadow">
+              <button onClick={()=>{ setMenuOpen(false); window.location.hash = '#/profile' }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Profile</button>
+              <button onClick={async()=>{ setMenuOpen(false); const rt = localStorage.getItem('refreshToken') || ''; await apiLogout(rt); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); localStorage.removeItem('userEmail'); localStorage.removeItem('userRole'); window.location.replace('#/login') }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Logout</button>
+            </div>
+          )}
+        </div>
+      </div>
+      )}
     </div>
   )
 }

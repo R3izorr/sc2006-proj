@@ -14,13 +14,13 @@ router = APIRouter()
 class RegisterIn(BaseModel):
     email: EmailStr
     password: str
-    role: str = "user"
 
 
 @router.post("/register")
-def register(body: RegisterIn, session: Session = Depends(db_session), _admin=Depends(require_admin)):
+def register(body: RegisterIn, session: Session = Depends(db_session)):
+    # Public client registration only; force role='user'
     try:
-        return auth_controller.register(session, email=body.email, password=body.password, role=body.role)
+        return auth_controller.register(session, email=body.email, password=body.password, role="user")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react'
 import MapView from '../../components/Map/MapView'
+import { apiLogout } from '../../services/api'
 import { AppStateProvider } from '../../contexts/AppStateContext'
 
 export default function MainPage(){
   const [selected, setSelected] = useState<any | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [compare, setCompare] = useState<any[]>([])
   const [tab, setTab] = useState<'details'|'search'|'filter'>('details')
   const [searchInput, setSearchInput] = useState<string>('')
@@ -78,6 +80,18 @@ export default function MainPage(){
     setCompare(prev => prev.filter(c => itemId(c) !== id))
   }
   function clearCompare(){ setCompare([]) }
+
+  const isLoggedIn = typeof window !== 'undefined' && !!localStorage.getItem('accessToken')
+  const isAdmin = typeof window !== 'undefined' && (localStorage.getItem('userRole') || '').toLowerCase() === 'admin'
+  async function handleLogout(){
+    const rt = localStorage.getItem('refreshToken') || ''
+    await apiLogout(rt)
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('userEmail')
+    localStorage.removeItem('userRole')
+    window.location.replace('#/login')
+  }
 
   return (
     <AppStateProvider>
@@ -247,6 +261,22 @@ export default function MainPage(){
             </div>
           )}
         </div>
+        {isLoggedIn && (
+          <div className="absolute top-2 right-2 z-[1100] flex gap-2">
+            {isAdmin && (
+              <button onClick={()=>{ window.location.hash = '#/admin' }} className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm opacity-90 hover:opacity-100">Admin Console</button>
+            )}
+            <div className="relative">
+              <button onClick={()=> setSettingsOpen(o=>!o)} className="px-3 py-1.5 rounded bg-gray-800 text-white text-sm opacity-90 hover:opacity-100">Settings</button>
+              {settingsOpen && (
+                <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded shadow">
+                  <button onClick={()=>{ setSettingsOpen(false); window.location.hash = '#/profile' }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Profile</button>
+                  <button onClick={()=>{ setSettingsOpen(false); handleLogout() }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Logout</button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </AppStateProvider>
   )
