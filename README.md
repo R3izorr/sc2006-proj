@@ -26,9 +26,13 @@ sc2006-proj/
 │       │   ├── db_models.py              # SQLAlchemy models: Snapshot, Subzone, User, RefreshToken
 │       │   └── kernel_config.py          # (existing)
 │       ├── routers/                      # HTTP endpoints
-│       │   ├── admin_router.py           # /admin/* (JWT admin only)
+│       │   ├── api_router.py             # Mounts all sub-routers with prefixes
+│       │   ├── admin_router.py           # /admin/* (JWT admin only; data + users)
 │       │   ├── data_router.py            # /data/* (file + DB endpoints)
-│       │   ├── auth_router.py            # /auth/* (login/register/...)
+│       │   ├── auth_router.py            # /auth/* (login/register/change-password/...)
+│       │   ├── config_router.py          # /config/* (app config)
+│       │   ├── export_router.py          # /export/* (optional)
+│       │   ├── subzones_router.py        # /subzones/* (optional)
 │       │   └── deps.py                   # FastAPI deps (DB session, JWT guards)
 │       ├── schemas/                      # Pydantic request/response DTOs (expand as needed)
 │       └── services/                     # Business logic
@@ -44,9 +48,11 @@ sc2006-proj/
 │       │   └── Map/                      # MapView & layers (Subzones/Hawkers/MRT)
 │       ├── contexts/
 │       ├── screens/
-│       │   ├── MainUI/                   # Main map & exploration UI
+│       │   ├── MainUI/                   # Map & exploration (Details, Search, Filter, Compare)
 │       │   ├── Compare/                  # Side-by-side ComparisonPage
-│       │   └── Admin/                    # AdminPage (login, upload, snapshots)
+│       │   ├── Admin/                    # AdminPage (Data Management + User Management)
+│       │   ├── Auth/                     # Login/Register
+│       │   └── Profile/                  # ProfilePage (change password)
 │       ├── services/                     # API client wrappers (data + admin)
 │       └── utils/                        # Geo helpers, color scales
 ├── content/                              # Datasets & the exported GeoJSON used by the map
@@ -57,22 +63,24 @@ sc2006-proj/
 │       └── hawker_opportunities_ver2.geojson   # “current” snapshot export
 ├── README.md
 ├── ScoreDemo.py                          # Scoring demo / notebook-style script
+├── bootstrap.py                          # One-shot setup: create schema/seed, optional export
 └── solve.py                              # Utility script(s)
 ```
 
 ### Folder roles
-- **backend/src/db**: Database engine/session creator; `get_session()` dependency.
-- **backend/src/models**: SQLAlchemy models and any domain-specific config models.
-- **backend/src/repositories**: Pure DB access (CRUD/queries), no HTTP or app logic.
-- **backend/src/services**: Business logic (ingest/export, auth/JWT), reusable by controllers.
-- **backend/src/controllers**: Orchestrates a use-case (start/commit, call services/repos, return DTOs).
-- **backend/src/routers**: FastAPI HTTP endpoints; uses controllers and shared deps/guards.
-- **frontend/src/screens/MainUI**: End‑user map experience (Details, Search, Filter, Compare).
-- **frontend/src/screens/Admin**: Admin console for login, upload FeatureCollection, snapshot list/restore.
-- **frontend/src/screens/Compare**: Side‑by‑side comparison view.
-- **content/out**: Backend writes the exported “current” GeoJSON here; the map fetches this file.
+- **backend/src/db**: SQLAlchemy engine/session; `get_session()` dependency.
+- **backend/src/models**: ORM models (`Snapshot`, `Subzone`, `User`, `RefreshToken`).
+- **backend/src/repositories**: Pure DB access (CRUD/queries): snapshots, subzones, users.
+- **backend/src/services**: Business logic (ingest/export, auth/JWT).
+- **backend/src/controllers**: Use-case orchestration (snapshots, auth, data).
+- **backend/src/routers**: HTTP endpoints; admin includes Data and User management; auth includes change password.
+- **frontend/src/screens/MainUI**: Map experience (details, search, region and rank filters, compare tray).
+- **frontend/src/screens/Admin**: Tabbed console with Data Management (upload GeoJSON, manage snapshots) and User Management (list/create admin/delete).
+- **frontend/src/screens/Compare**: Side‑by‑side comparison (includes Z_Dem, Z_Sup, Z_Acc, H_score, population, transport, hawkers).
+- **frontend/src/screens/Profile**: Profile and change password.
+- **content/out**: Exported “current” GeoJSON; the map fetches this file.
 
-## Functional Requirements
+## Functional Requirements (current)
 
 ### Display map
 - 1.1 DisplaySubzones — Draw URA subzone polygons. Polygons are hoverable and clickable.
@@ -93,15 +101,22 @@ sc2006-proj/
 - 4.2 SubzoneComparison — Let users add up to two subzones to a tray and view side-by-side metrics with radar/table views. (a subpage in the main page map)
 
 ### Admin data operations and export
-- 5.1 RefreshDatasets (Admin) — Reload official datasets and recompute scores; save a new snapshot.
-- 5.2 ManageSnapshots (Admin) — List, view, and restore snapshots with version notes and timestamps.
+- 5.1 DataManagement — Upload FeatureCollection GeoJSON, ingest + recompute + export current snapshot.
+- 5.2 ManageSnapshots — List, view, and restore snapshots with version notes and timestamps.
 - 5.3 ExportSubzoneDetails — Export the current subzone details view as PDF/PNG with metadata.
+
+### Admin user management
+- 5.4 ManageUsers (Admin) — Dedicated tab in AdminPage for user management.
+  - Reads users from Neon Postgres (via SQLAlchemy `users` table).
+  - List users (email, role, created_at).
+  - Create another admin account.
+  - Delete a user account (with guardrails: cannot delete self; confirmation modal).
 
 ### Authentication and password flows
 - 6.1 ClientRegistration — Register a client account.
 - 6.2 UserLogin — Log in with email and password; idle session timeout enforced.
-- 6.3 PasswordManagement — Change password while signed in; invalidate other sessions.
-- 6.4 ResetForgottenPassword — “Forgot Password” email flow with one-time token and policy checks.
+- 6.3 PasswordManagement — Change password while signed in (ProfilePage).
+- 6.4 ResetForgottenPassword — (backlog) email flow with one-time token and policy checks.
 
 ## Tech Stack
 
@@ -131,46 +146,13 @@ JWT_SECRET=change-me-in-production
 EXPORT_DIR=content/out
 ```
 
-2) Install backend deps and apply schema
+2) Bootstrap backend (install deps, create schema, optional seed)
 ```
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r backend\requirements.txt
+run bootstrap.py
 
-# Apply DB schema (no psql required)
-python - << 'PY'
-from pathlib import Path
-from dotenv import load_dotenv; load_dotenv()
-import os
-from sqlalchemy import create_engine
-sql = Path('backend/sql/001_init.sql').read_text()
-engine = create_engine(os.environ['DATABASE_URL'], future=True)
-with engine.begin() as c:
-    c.exec_driver_sql(sql)
-print('Schema applied')
-PY
 ```
 
-3) Create an initial admin user (one‑off)
-```
-python - << 'PY'
-from backend.src.db import get_session
-from backend.src.services.auth_service import hash_password
-from backend.src.repositories.user_repo import create_user
-with get_session() as s:
-    uid = create_user(s, email='admin@example.com', password_hash=hash_password('pass123'), role='admin')
-    print('admin user id:', uid)
-PY
-```
-
-4) Start backend
-```
-uvicorn backend.src.main:app --host 127.0.0.1 --port 8000 --reload
-# Health check
-curl http://127.0.0.1:8000/healthz
-```
-
-5) Install frontend deps and run
+3) Start frontend
 ```
 cd frontend
 npm install
@@ -178,7 +160,7 @@ npm run dev
 # Open http://127.0.0.1:5173
 ```
 
-6) Admin workflow (UI)
+4) Admin workflow (UI)
 - Open `http://127.0.0.1:5173/#/admin`.
 - Login with the admin user.
 - Paste a valid FeatureCollection JSON and click “Refresh Dataset”.
@@ -186,7 +168,7 @@ npm run dev
 - Use the Snapshots list to restore any snapshot.
 - Click “Back to Map” to see the latest export on the map. The frontend fetches `/data/opportunity.geojson` with cache‑busting.
 
-7) Useful API endpoints
+5) Useful API endpoints
 - `/auth/login` (POST) — get access/refresh tokens
 - `/admin/refresh` (POST, admin) — ingest FeatureCollection, set current, export file
 - `/admin/snapshots` (GET, admin) — list snapshots
@@ -194,42 +176,24 @@ npm run dev
 - `/data/opportunity.geojson` (GET) — exported “current” FeatureCollection
 - `/data/opportunity-db.geojson` (GET) — FeatureCollection assembled from DB
 
-## Frontend routes and flows
+User management (admin-only)
+- `/admin/users` (GET) — list users
+- `/admin/users` (POST) — create admin user (email + password); persists to Neon DB
+- `/admin/users/{id}` (DELETE) — delete a user
+Auth
+- `/auth/change-password` (POST) — change password for current user (auth required)
+
+## Frontend routes and flows (current)
 
 - `#/home` — HomePage: project overview and references (data sources, methodology). Buttons: Sign in → `#/login`, Register → `#/register`.
-- `#/login` — LoginPage: shared for Admin and Client. After login: Admin → `#/admin`, Client → `#/` (Map).
-- `#/register` — RegisterPage: client registration. Creates a client account in Neon Postgres via `/auth/register`. On success, redirect to `#/login`.
-- `#/` — Map (MainPage/MapView).
+- `#/login` — LoginPage: shared for Admin and Client. After login: Admin → `#/admin`, Client → `#/map`.
+- `#/register` — RegisterPage: client   registration. Creates a client account in Neon Postgres via `/auth/register`. On success, redirect to `#/login`.
+- `#/map` — Map (MainPage/MapView).
 - `#/admin` — AdminPage (guarded; non‑admin redirected to `#/login`).
 - `#/compare` — ComparisonPage.
+- `#/profile` — ProfilePage (change password).
+- AdminPage contains two tabs: Data Management (GeoJSON refresh/snapshots) and User Management (list users, create admin, delete user).
+- User Management reads from/writes to Neon DB (create/delete reflect immediately).
 
-## Implementation plan (phases)
 
-### Phase 1 — Public map MVP
-- Home page (`#/home`) with platform overview and references. Primary buttons: Sign in and Register.
-- Map experience (`#/`) with subzone selection, details, search and filters.
-- MRT exits and hawker layers filtered by selected subzone, optimized with bbox prefilter.
-
-### Phase 2 — Authentication and roles
-- Login page (`#/login`) used by both Admin and Client via `/auth/login`.
-- Redirect after login: Admin accounts → `#/admin`; Client accounts → `#/` (Map).
-- Registration page (`#/register`) for client sign‑up; persists to Neon DB; after register go to `#/login`.
-- Store tokens and user info in `localStorage`.
-- Simple admin guard in app router: non‑admin visits to `#/admin` are redirected to `#/login`.
-
-### Phase 3 — Admin console completion
-- Upload FeatureCollection and trigger refresh/export.
-- List and restore snapshots.
-- Post‑refresh warm‑load of `/data/opportunity.geojson`.
-
-### Phase 4 — Polish and enhancements
-- Replace AdminPage inline login with shared LoginPage (optional cleanup).
-- Add persistent auth context with refresh flow and logout everywhere.
-- Improve UI: theming, mobile responsiveness, accessibility passes.
-- Performance: caching filtered points per subzone, marker clustering.
-
-### Phase 5 — Backlog
-- Registration and password reset flows.
-- Server‑side scoring service and scheduled snapshots.
-- Export subzone details as PDF/PNG.
 

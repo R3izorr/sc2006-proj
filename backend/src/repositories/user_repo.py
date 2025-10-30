@@ -23,6 +23,18 @@ def create_user(session: Session, *, email: str, password_hash: str, role: str =
     return u.id
 
 
+def list_users(session: Session) -> list[User]:
+    return session.execute(select(User)).scalars().all()
+
+
+def delete_user(session: Session, user_id: str) -> int:
+    u = get_user_by_id(session, user_id)
+    if not u:
+        return 0
+    session.delete(u)
+    return 1
+
+
 
 
 

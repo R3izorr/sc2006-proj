@@ -186,7 +186,7 @@ def main():
     # If either column is missing, treat as 0. This avoids NaNs propagating.
     gdf["_mrt_for_acc"] = pd.to_numeric(gdf.get("mrt", 0), errors="coerce").fillna(0)
     gdf["_bus_for_acc"] = pd.to_numeric(gdf.get("bus", 0), errors="coerce").fillna(0)
-    gdf["Acc"] = gdf["_mrt_for_acc"] + gdf["_bus_for_acc"]
+    gdf["Acc"] = 0.7*gdf["_mrt_for_acc"] + 0.3*gdf["_bus_for_acc"]
 
     # H_score = normalized ( w_dem*Z(population) - w_sup*Z(hawker) + w_acc*Z(access) )
     # Rebalance weights to include accessibility

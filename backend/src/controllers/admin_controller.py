@@ -5,8 +5,8 @@ from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 
-from ..repositories import snapshot_repo
-from ..services import snapshot_service
+from ..repositories import snapshot_repo, user_repo
+from ..services import snapshot_service, auth_service
 
 
 def refresh_snapshot(
@@ -47,6 +47,37 @@ def restore_snapshot(session: Session, snapshot_id: str, *, export_dir: str | Pa
     out = snapshot_service.export_current_geojson(session, snapshot_id, export_dir)
     return {"snapshot_id": snapshot_id, "export_path": str(out)}
 
+
+# ---- User management (admin-only) ----
+
+def list_users(session: Session) -> list[dict[str, Any]]:
+    users = user_repo.list_users(session)
+    return [
+        {
+            "id": u.id,
+            "email": u.email,
+            "role": u.role,
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+        }
+        for u in users
+    ]
+
+
+def create_admin_user(session: Session, *, email: str, password: str) -> dict[str, Any]:
+    if user_repo.get_user_by_email(session, email):
+        raise ValueError("Email already registered")
+    ph = auth_service.hash_password(password)
+    uid = user_repo.create_user(session, email=email, password_hash=ph, role="admin")
+    return {"user_id": uid}
+
+
+def delete_user(session: Session, *, user_id: str, current_user_id: str) -> dict[str, Any]:
+    if user_id == current_user_id:
+        raise ValueError("Cannot delete current user")
+    deleted = user_repo.delete_user(session, user_id)
+    if deleted == 0:
+        raise ValueError("User not found")
+    return {"ok": True}
 
 
 

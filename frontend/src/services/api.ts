@@ -87,3 +87,36 @@ export async function apiLogout(refreshToken: string){
     })
   } catch {}
 }
+
+// --- Admin user management ---
+
+export type AdminUser = { id: string, email: string, role: string, created_at?: string }
+
+export async function apiAdminListUsers(token: string): Promise<{ users: AdminUser[] }>{
+  const r = await fetch('/admin/users', { headers: { 'Authorization': `Bearer ${token}` } })
+  if(!r.ok) throw new Error('Failed to list users')
+  return r.json()
+}
+
+export async function apiAdminCreateAdmin(token: string, email: string, password: string): Promise<{ user_id: string }>{
+  const r = await fetch('/admin/users', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ email, password })
+  })
+  if(!r.ok){
+    const msg = await r.text().catch(()=>null)
+    throw new Error(msg || 'Failed to create admin')
+  }
+  return r.json()
+}
+
+export async function apiAdminDeleteUser(token: string, userId: string): Promise<{ ok: boolean }>{
+  const r = await fetch(`/admin/users/${encodeURIComponent(userId)}`, {
+    method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
+  })
+  if(!r.ok){
+    const msg = await r.text().catch(()=>null)
+    throw new Error(msg || 'Failed to delete user')
+  }
+  return r.json()
+}

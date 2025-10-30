@@ -38,3 +38,33 @@ def restore_snapshot(snapshot_id: str, session: Session = Depends(db_session), _
     return admin_controller.restore_snapshot(session, snapshot_id, export_dir="content/out")
 
 
+# ---- User management ----
+
+from pydantic import EmailStr
+
+
+class CreateAdminBody(BaseModel):
+    email: EmailStr
+    password: str
+
+
+@router.get("/users")
+def list_users(session: Session = Depends(db_session), _admin=Depends(require_admin)):
+    return {"users": admin_controller.list_users(session)}
+
+
+@router.post("/users")
+def create_admin_user(body: CreateAdminBody, session: Session = Depends(db_session), _admin=Depends(require_admin)):
+    try:
+        return admin_controller.create_admin_user(session, email=body.email, password=body.password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/users/{user_id}")
+def delete_user(user_id: str, session: Session = Depends(db_session), admin=Depends(require_admin)):
+    try:
+        return admin_controller.delete_user(session, user_id=user_id, current_user_id=admin.get("id"))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
