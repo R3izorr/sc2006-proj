@@ -69,6 +69,9 @@ export default function RegisterPage(){
         <div className="text-sm mt-3 text-center">
           <a href="#/login" className="text-blue-600">Already have an account? Sign in</a>
         </div>
+        <div className="mt-3 flex justify-center">
+          <a href="#/home" className="px-3 py-1.5 rounded border">Back to Home</a>
+        </div>
       </form>
     </div>
   )

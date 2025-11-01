@@ -122,16 +122,16 @@ export default function ProfilePage(){
               <label className="block text-xs text-gray-600 mb-1">Phone</label>
               <input value={formPhone} onChange={e=>setFormPhone(e.target.value)} className="w-full border rounded px-2 py-1" />
             </div>
-            <div className="pt-2">
+            {!me?.google_sub && <div className="pt-2">
               <div className="text-xs text-gray-500 mb-1">Change password (optional)</div>
               <input type="password" placeholder="Current password" value={currentPw} onChange={e=>setCurrentPw(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" />
               <input type="password" placeholder="New password" value={newPw} onChange={e=>setNewPw(e.target.value)} className="w-full border rounded px-2 py-1" />
-            </div>
+            </div>}
           </div>}
-          <div className="flex items-center justify-between">
+          {!edit && <div className="flex items-center justify-between">
             <div className="text-gray-600">Password</div>
             <div className="font-mono">********</div>
-          </div>
+          </div>}
         </div>
         <div className="mt-6 flex justify-between">
           <a href="#/map" className="px-3 py-1.5 rounded border">Back to Map</a>

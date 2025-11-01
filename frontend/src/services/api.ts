@@ -129,6 +129,7 @@ export type Me = {
   id: string
   email: string
   role: string
+  google_sub?: string | null
   display_name?: string | null
   industry?: string | null
   phone?: string | null

@@ -32,6 +32,7 @@ def get_current_user(request: Request, session: Session = Depends(db_session)) -
         "id": user.id,
         "email": user.email,
         "role": user.role,
+        "google_sub": getattr(user, "google_sub", None),
         "display_name": getattr(user, "display_name", None),
         "industry": getattr(user, "industry", None),
         "phone": getattr(user, "phone", None),

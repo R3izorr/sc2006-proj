@@ -105,6 +105,9 @@ export default function LoginPage(){
         <div className="text-sm mt-3 text-center">
           <a href="#/register" className="text-blue-600">Don't have an account? Create one</a>
         </div>
+        <div className="mt-3 flex justify-center">
+          <a href="#/home" className="px-3 py-1.5 rounded border">Back to Home</a>
+        </div>
       </form>
     </div>
   )
