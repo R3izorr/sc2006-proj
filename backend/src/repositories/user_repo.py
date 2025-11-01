@@ -5,7 +5,7 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models.db_models import User
+from ..models.user import User
 
 
 def get_user_by_email(session: Session, email: str) -> Optional[User]:

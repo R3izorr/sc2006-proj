@@ -5,7 +5,7 @@ from typing import Any, Iterable, Optional
 from sqlalchemy import insert, select
 from sqlalchemy.orm import Session
 
-from ..models.db_models import Subzone
+from ..models.subzone import Subzone
 
 
 def insert_many(session: Session, snapshot_id: str, features: Iterable[dict[str, Any]]) -> int:
@@ -114,6 +114,7 @@ def _float_or_none(v: Any) -> Optional[float]:
         return n
     except Exception:
         return None
+
 
 
 

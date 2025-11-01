@@ -13,7 +13,8 @@ from passlib.context import CryptContext
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
-from ..models.db_models import RefreshToken, User
+from ..models.refresh_token import RefreshToken
+from ..models.user import User
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

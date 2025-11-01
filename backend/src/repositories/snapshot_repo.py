@@ -5,7 +5,7 @@ from typing import Iterable, Optional
 from sqlalchemy import update, select
 from sqlalchemy.orm import Session
 
-from ..models.db_models import Snapshot
+from ..models.snapshot import Snapshot
 
 
 def create_snapshot(session: Session, *, note: Optional[str] = None, created_by: Optional[str] = None) -> str:
@@ -33,6 +33,7 @@ def list_snapshots(session: Session) -> list[Snapshot]:
 
 def restore_snapshot(session: Session, snapshot_id: str) -> None:
     set_current_snapshot(session, snapshot_id)
+
 
 
 

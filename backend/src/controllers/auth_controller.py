@@ -10,7 +10,8 @@ from google.auth.transport import requests as google_requests
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models.db_models import RefreshToken, User
+from ..models.refresh_token import RefreshToken
+from ..models.user import User
 from ..repositories import user_repo
 from ..services import auth_service
 
