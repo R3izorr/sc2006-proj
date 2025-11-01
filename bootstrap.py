@@ -5,7 +5,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent
 BACKEND_REQ = REPO_ROOT / "backend" / "requirements.txt"
-SCHEMA_SQL = REPO_ROOT / "backend" / "sql" / "001_init.sql"
+SQL_DIR = REPO_ROOT / "backend" / "sql"
 ENV_PATH = REPO_ROOT / ".env"
 
 INSTALL_DEPS = True
@@ -37,11 +37,23 @@ def apply_schema():
     # Using psycopg v3 (psycopg[binary]) with SQLAlchemy dialect 'postgresql+psycopg'
     
     try:
-        sql = SCHEMA_SQL.read_text(encoding="utf-8")
         engine = create_engine(url, future=True)
+        # Apply all SQL files in backend/sql in lexical order (001_*.sql, 002_*.sql, ...)
+        if not SQL_DIR.exists():
+            raise SystemExit(f"ERROR: SQL directory not found: {SQL_DIR}")
+        files = sorted(SQL_DIR.glob("*.sql"))
+        if not files:
+            raise SystemExit(f"ERROR: No .sql files found in {SQL_DIR}")
         with engine.begin() as conn:
-            conn.execute(text(sql))
-        print("    OK")
+            for p in files:
+                try:
+                    sql = p.read_text(encoding="utf-8")
+                    conn.execute(text(sql))
+                    print(f"    Applied {p.name}")
+                except Exception as ee:
+                    print(f"    ERROR applying {p.name}: {ee}")
+                    raise
+        print("    OK (all migrations applied)")
     except Exception as e:
         print(f"    ERROR: Failed to apply schema: {e}")
         print("    Make sure your DATABASE_URL is correct and the database is accessible.")
