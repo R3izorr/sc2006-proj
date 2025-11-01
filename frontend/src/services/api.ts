@@ -1,23 +1,39 @@
 export async function fetchOpportunityGeoJSON() {
-  const r = await fetch(`/data/opportunity.geojson?t=${Date.now()}`, { cache: 'no-store' })
+  const token = (typeof window !== 'undefined') ? (localStorage.getItem('accessToken') || '') : ''
+  const r = await fetch(`/data/opportunity.geojson?t=${Date.now()}`, {
+    cache: 'no-store',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+  })
   if (!r.ok) throw new Error('Failed to load geojson')
   return r.json()
 }
 
 export async function fetchHawkerCentresGeoJSON() {
-  const r = await fetch(`/data/hawker-centres.geojson?t=${Date.now()}`, { cache: 'no-store' })
+  const token = (typeof window !== 'undefined') ? (localStorage.getItem('accessToken') || '') : ''
+  const r = await fetch(`/data/hawker-centres.geojson?t=${Date.now()}`, {
+    cache: 'no-store',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+  })
   if (!r.ok) throw new Error('Failed to load hawker centres geojson')
   return r.json()
 }
 
 export async function fetchMrtExitsGeoJSON() {
-  const r = await fetch(`/data/mrt-exits.geojson?t=${Date.now()}`, { cache: 'no-store' })
+  const token = (typeof window !== 'undefined') ? (localStorage.getItem('accessToken') || '') : ''
+  const r = await fetch(`/data/mrt-exits.geojson?t=${Date.now()}`, {
+    cache: 'no-store',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+  })
   if (!r.ok) throw new Error('Failed to load MRT exits geojson')
   return r.json()
 }
 
 export async function fetchBusStopsGeoJSON() {
-  const r = await fetch(`/data/bus-stops.geojson?t=${Date.now()}`, { cache: 'no-store' })
+  const token = (typeof window !== 'undefined') ? (localStorage.getItem('accessToken') || '') : ''
+  const r = await fetch(`/data/bus-stops.geojson?t=${Date.now()}`, {
+    cache: 'no-store',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+  })
   if (!r.ok) throw new Error('Failed to load bus stops geojson')
   return r.json()
 }
