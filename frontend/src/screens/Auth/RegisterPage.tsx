@@ -53,9 +53,8 @@ export default function RegisterPage(){
         <div className="mb-2">
           <label className="block text-sm text-gray-600 mb-1">Industry</label>
           <select value={industry} onChange={e=>setIndustry(e.target.value)} className="w-full border rounded px-2 py-1" required>
-            <option value="student">student</option>
-            <option value="businessmen">businessmen</option>
-            <option value="investmen">investmen</option>
+            <option value="student">Student</option>
+            <option value="businessmen">Businessmen</option>
           </select>
         </div>
         <div className="mb-2">

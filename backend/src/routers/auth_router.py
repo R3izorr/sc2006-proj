@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
+import os
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
@@ -81,6 +83,16 @@ def google_login(body: GoogleLoginIn, session: Session = Depends(db_session)):
         return auth_controller.login_with_google(session, id_token_str=body.id_token)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+
+@router.get("/google/client-id")
+def google_client_id():
+    cid = os.getenv("GOOGLE_CLIENT_ID") or ""
+    return JSONResponse({"client_id": cid}, headers={
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+    })
 
 
 class ProfileUpdateIn(BaseModel):

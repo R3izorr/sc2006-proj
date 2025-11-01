@@ -28,13 +28,11 @@ sc2006-proj/
 │       │   ├── subzone.py                # Subzone ORM
 │       │   ├── user.py                   # User ORM
 │       │   ├── refresh_token.py          # RefreshToken ORM
-│       │   └── kernel_config.py          # (config model for /config endpoints)
 │       ├── routers/                      # HTTP endpoints
 │       │   ├── api_router.py             # Mounts all sub-routers with prefixes
 │       │   ├── admin_router.py           # /admin/* (JWT admin only; data + users)
 │       │   ├── data_router.py            # /data/* (file + DB endpoints)
 │       │   ├── auth_router.py            # /auth/* (login/register/change-password/...)
-│       │   ├── config_router.py          # /config/* (app config)
 │       │   ├── export_router.py          # /export/* (optional)
 │       │   ├── subzones_router.py        # /subzones/* (optional)
 │       │   └── deps.py                   # FastAPI deps (DB session, JWT guards)

@@ -35,10 +35,19 @@ export default function LoginPage(){
   const googleInitDoneRef = useRef(false)
 
   useEffect(() => {
-    const clientId = (window.GOOGLE_CLIENT_ID || (import.meta as any)?.env?.VITE_GOOGLE_CLIENT_ID || '').trim()
+    let clientId = (window.GOOGLE_CLIENT_ID || (import.meta as any)?.env?.VITE_GOOGLE_CLIENT_ID || '').trim()
+
+    // If no clientId available at build/runtime, fetch from backend env
+    if(!clientId){
+      fetch('/auth/google/client-id', { cache: 'no-store' })
+        .then(r=>r.json())
+        .then(({ client_id }) => { if(client_id){ window.GOOGLE_CLIENT_ID = client_id } })
+        .catch(()=>{})
+    }
 
     const tryInit = () => {
       if (googleInitDoneRef.current) return
+      clientId = (window.GOOGLE_CLIENT_ID || (import.meta as any)?.env?.VITE_GOOGLE_CLIENT_ID || '').trim()
       if (!clientId || !window.google || !googleBtnRef.current) return
       try{
         window.google.accounts.id.initialize({
