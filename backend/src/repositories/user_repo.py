@@ -16,8 +16,24 @@ def get_user_by_id(session: Session, user_id: str) -> Optional[User]:
     return session.execute(select(User).where(User.id == user_id)).scalars().first()
 
 
-def create_user(session: Session, *, email: str, password_hash: str, role: str = "user") -> str:
-    u = User(email=email, password_hash=password_hash, role=role)
+def create_user(
+    session: Session,
+    *,
+    email: str,
+    password_hash: Optional[str],
+    role: str = "user",
+    display_name: Optional[str] = None,
+    industry: Optional[str] = None,
+    phone: Optional[str] = None,
+) -> str:
+    u = User(
+        email=email,
+        password_hash=password_hash,
+        role=role,
+        display_name=display_name,
+        industry=industry,
+        phone=phone,
+    )
     session.add(u)
     session.flush()
     return u.id
@@ -27,12 +43,39 @@ def list_users(session: Session) -> list[User]:
     return session.execute(select(User)).scalars().all()
 
 
+def get_user_by_google_sub(session: Session, google_sub: str) -> Optional[User]:
+    return session.execute(select(User).where(User.google_sub == google_sub)).scalars().first()
+
+
 def delete_user(session: Session, user_id: str) -> int:
     u = get_user_by_id(session, user_id)
     if not u:
         return 0
     session.delete(u)
     return 1
+
+
+def update_user_profile(
+    session: Session,
+    *,
+    user_id: str,
+    display_name: Optional[str] = None,
+    industry: Optional[str] = None,
+    phone: Optional[str] = None,
+    picture_url: Optional[str] = None,
+) -> bool:
+    u = get_user_by_id(session, user_id)
+    if not u:
+        return False
+    if display_name is not None:
+        u.display_name = display_name
+    if industry is not None:
+        u.industry = industry
+    if phone is not None:
+        u.phone = phone
+    if picture_url is not None:
+        u.picture_url = picture_url
+    return True
 
 
 

@@ -99,18 +99,12 @@ sc2006-proj/
 ### Subzone details and comparison
 - 4.1 ShowSubzoneDetails — For a selected subzone, display demographics, nearby hawker centres, nearby MRT/bus, Dem/Sup/Acc component values, final Hᵢ, and simple charts.
 - 4.2 SubzoneComparison — Let users add up to two subzones to a tray and view side-by-side metrics with radar/table views. (a subpage in the main page map)
+- 4.3 ExportSubzoneDetails — Export the current subzone details view as PDF/PNG with metadata.
 
-### Admin data operations and export
+### Admin data operations and user management
 - 5.1 DataManagement — Upload FeatureCollection GeoJSON, ingest + recompute + export current snapshot.
 - 5.2 ManageSnapshots — List, view, and restore snapshots with version notes and timestamps.
-- 5.3 ExportSubzoneDetails — Export the current subzone details view as PDF/PNG with metadata.
-
-### Admin user management
 - 5.4 ManageUsers (Admin) — Dedicated tab in AdminPage for user management.
-  - Reads users from Neon Postgres (via SQLAlchemy `users` table).
-  - List users (email, role, created_at).
-  - Create another admin account.
-  - Delete a user account (with guardrails: cannot delete self; confirmation modal).
 
 ### Authentication and password flows
 - 6.1 ClientRegistration — Register a client account.
