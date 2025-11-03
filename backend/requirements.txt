@@ -7,6 +7,10 @@ psycopg[binary]>=3.2
 PyJWT>=2.9
 google-auth>=1.2.0
 requests>=2.32.3
+psycopg[binary]>=3.2
+psycopg2-binary>=2.9.10
+psycopg2>=2.9.10
+psycopg2-binary>=2.9.10
 # Pin bcrypt to avoid passlib backend incompatibilities on Windows
 passlib[bcrypt]>=1.7.4
 bcrypt==3.2.2

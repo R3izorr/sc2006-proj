@@ -9,79 +9,118 @@ sc2006-proj/
 ├── backend/                              # FastAPI backend (Python)
 │   ├── requirements.txt                  # Backend dependencies
 │   ├── sql/
-│   │   └── 001_init.sql                  # DB schema (snapshots, subzones, users, tokens)
+│   │   ├── 001_init.sql                  # Core schema (snapshots, subzones, users, tokens)
+│   │   ├── 002_google_auth.sql           # Google OAuth user mapping
+│   │   ├── 003_register_fields.sql       # Profile fields (display name, industry, phone)
+│   │   ├── 005_email_verification.sql    # Email verification tokens
+│   │   └── 006_password_reset.sql        # Password reset tokens
 │   └── src/
 │       ├── main.py                       # Server entrypoint, CORS, router mounting
 │       ├── db/
 │       │   └── __init__.py               # SQLAlchemy engine + get_session()
 │       ├── controllers/                  # Orchestrates use-cases across services/repos
-│       │   ├── admin_controller.py       # Refresh/list/restore snapshots + export
-│       │   ├── data_controller.py        # Assemble FeatureCollection, list subzones
-│       │   └── auth_controller.py        # Register/login/refresh/logout/me
+│       │   ├── admin_controller.py
+│       │   ├── auth_controller.py
+│       │   └── data_controller.py
 │       ├── repositories/                 # Data access layer (DB CRUD/queries)
 │       │   ├── snapshot_repo.py
 │       │   ├── subzone_repo.py
 │       │   └── user_repo.py
 │       ├── models/
 │       │   ├── base.py                   # SQLAlchemy DeclarativeBase
-│       │   ├── snapshot.py               # Snapshot ORM
-│       │   ├── subzone.py                # Subzone ORM
-│       │   ├── user.py                   # User ORM
-│       │   ├── refresh_token.py          # RefreshToken ORM
+│       │   ├── refresh_token.py
+│       │   ├── snapshot.py
+│       │   ├── subzone.py
+│       │   └── user.py
 │       ├── routers/                      # HTTP endpoints
 │       │   ├── api_router.py             # Mounts all sub-routers with prefixes
 │       │   ├── admin_router.py           # /admin/* (JWT admin only; data + users)
-│       │   ├── data_router.py            # /data/* (file + DB endpoints)
-│       │   ├── auth_router.py            # /auth/* (login/register/change-password/...)
+│       │   ├── auth_router.py            # /auth/* (login/register/profile/email workflows)
+│       │   ├── data_router.py            # /data/* (secured GeoJSON + DB views)
 │       │   ├── export_router.py          # /export/* (optional)
 │       │   ├── subzones_router.py        # /subzones/* (optional)
 │       │   └── deps.py                   # FastAPI deps (DB session, JWT guards)
-│       ├── schemas/                      # Pydantic request/response DTOs (expand as needed)
+│       ├── schemas/                      # Pydantic request/response DTOs
+│       │   ├── auth_schemas.py
+│       │   ├── export_schemas.py
+│       │   └── subzone_schemas.py
 │       └── services/                     # Business logic
-│           ├── snapshot_service.py       # Ingest/export snapshots
+│           ├── auth_service.py           # Hash/verify, JWT, password policy, refresh tokens
 │           ├── data_service.py           # Data assembly helpers
-│           ├── auth_service.py           # Hash/verify, JWT, refresh tokens
-│           └── config_service.py         # Config load/save (optional)
+│           ├── email_service.py          # SMTP email (verification + reset)
+│           └── snapshot_service.py       # Ingest/export snapshots
 ├── frontend/                             # React + Vite + TypeScript frontend
 │   ├── index.html
 │   ├── package.json
 │   ├── vite.config.ts                    # Dev server + proxy to backend (/data,/auth,/admin)
+│   ├── public/
+│   │   └── icons/                        # Map legend + POI icons
+│   │       ├── bus.svg
+│   │       ├── hawker.svg
+│   │       └── mrt-exit.svg
 │   └── src/
+│       ├── App.tsx
+│       ├── main.tsx
+│       ├── index.css
 │       ├── components/
-│       │   └── Map/                      # MapView & layers (Subzones/Hawkers/MRT)
+│       │   └── Map/                      # Leaflet map and layers
+│       │       ├── MapView.tsx
+│       │       ├── ChoroplethLayer.tsx
+│       │       ├── HawkerCentresLayer.tsx
+│       │       ├── MrtExitsLayer.tsx
+│       │       ├── BusStopsLayer.tsx
+│       │       ├── HeatMapLayer.tsx
+│       │       └── Toolbar.tsx
 │       ├── contexts/
+│       │   └── AppStateContext.tsx
 │       ├── screens/
-│       │   ├── MainUI/                   # Map & exploration (Details, Search, Filter, Compare)
-│       │   ├── Compare/                  # Side-by-side ComparisonPage
-│       │   ├── Admin/                    # AdminPage (Data Management + User Management)
-│       │   ├── Auth/                     # Login/Register
-│       │   └── Profile/                  # ProfilePage (change password)
-│       ├── services/                     # API client wrappers (data + admin)
-│       └── utils/                        # Geo helpers, color scales
+│       │   ├── Home/
+│       │   │   └── HomePage.tsx          # Landing page & overview
+│       │   ├── MainUI/
+│       │   │   └── MainPage.tsx          # Map & exploration (details, filters, compare)
+│       │   ├── Compare/
+│       │   │   └── ComparisonPage.tsx    # Side-by-side comparison tray
+│       │   ├── Admin/
+│       │   │   └── AdminPage.tsx         # Data & user management console
+│       │   ├── Profile/
+│       │   │   └── ProfilePage.tsx       # Profile management & password change
+│       │   └── Auth/
+│       │       ├── LoginPage.tsx
+│       │       ├── RegisterPage.tsx
+│       │       ├── ForgotPasswordPage.tsx
+│       │       ├── ResetPasswordPage.tsx
+│       │       └── VerifyEmailPage.tsx
+│       ├── services/
+│       │   └── api.ts                    # API client wrappers (data + auth + admin)
+│       └── utils/
+│           ├── colorScale.ts
+│           └── geo.ts
 ├── content/                              # Datasets & the exported GeoJSON used by the map
+│   ├── MasterPlan2019SubzoneBoundaryNoSeaGEOJSON.geojson
 │   ├── HawkerCentresGEOJSON.geojson
 │   ├── LTAMRTStationExitGEOJSON.geojson
-│   ├── MasterPlan2019SubzoneBoundaryNoSeaGEOJSON.geojson
+│   ├── bus_stops.geojson
+│   ├── ResidentPopulationbyPlanningAreaSubzoneofResidenceAgeGroupandSexCensusofPopulation2020.csv
 │   └── out/
 │       └── hawker_opportunities_ver2.geojson   # “current” snapshot export
 ├── README.md
 ├── ScoreDemo.py                          # Scoring demo / notebook-style script
-├── bootstrap.py                          # One-shot setup: create schema/seed, optional export
-└── solve.py                              # Utility script(s)
+└── bootstrap.py                          # One-shot setup: create schema/seed, optional export
 ```
 
 ### Folder roles
-- **backend/src/db**: SQLAlchemy engine/session; `get_session()` dependency.
-- **backend/src/models**: Split ORM models (`base.py`, `snapshot.py`, `subzone.py`, `user.py`, `refresh_token.py`).
-- **backend/src/repositories**: Pure DB access (CRUD/queries): snapshots, subzones, users.
-- **backend/src/services**: Business logic (ingest/export, auth/JWT).
-- **backend/src/controllers**: Use-case orchestration (snapshots, auth, data).
-- **backend/src/routers**: HTTP endpoints; admin includes Data and User management; auth includes change password.
-- **frontend/src/screens/MainUI**: Map experience (details, search, region and rank filters, compare tray).
-- **frontend/src/screens/Admin**: Tabbed console with Data Management (upload GeoJSON, manage snapshots) and User Management (list/create admin/delete).
-- **frontend/src/screens/Compare**: Side‑by‑side comparison (includes Z_Dem, Z_Sup, Z_Acc, H_score, population, transport, hawkers).
-- **frontend/src/screens/Profile**: Profile, update profile (name, industry, phone, picture, password).
-- **content/out**: Exported “current” GeoJSON; the map fetches this file.
+- **backend/src/db**: SQLAlchemy engine/session helpers; `get_session()` dependency for FastAPI.
+- **backend/src/models**: ORM models split by concern (users, tokens, snapshots, subzones).
+- **backend/src/repositories**: Pure DB access (CRUD/queries) used by controllers/services.
+- **backend/src/services**: Business logic (auth/JWT/password policy, email delivery, data assembly, snapshot ingest/export).
+- **backend/src/controllers**: Orchestrate use-cases (auth flows, dataset refresh/export, GeoJSON assembly).
+- **backend/src/routers**: HTTP endpoints; auth now covers registration, JWT, Google sign-in, email verification, password reset, and profile.
+- **frontend/src/screens/MainUI**: Interactive map experience (details, search, filters, compare tray).
+- **frontend/src/screens/Auth**: Login/register plus email verification, forgot/reset password workflows.
+- **frontend/src/screens/Admin**: Tabbed console with Data Management (GeoJSON refresh/snapshots) and User Management (list/create/delete admin users).
+- **frontend/src/screens/Compare**: Side-by-side comparison (Z_Dem, Z_Sup, Z_Acc, H_score, transport, hawkers).
+- **frontend/src/screens/Profile**: Profile updates (name, industry, phone, picture, password change).
+- **content/out**: Exported “current” GeoJSON; the frontend fetches this file (secured by JWT).
 
 ## Functional Requirements (current)
 
@@ -89,6 +128,7 @@ sc2006-proj/
 - 1.1 DisplaySubzones — Draw URA subzone polygons. Polygons are hoverable and clickable.
 - 1.2 ChoroplethLayer — Shade subzones by Hawker-Opportunity Score with legend and normalized colour scale.
 - 1.3 MapInteractionControls — Zoom, pan, and hover interactions on the subzone map.
+- 1.4 PointsOfInterestLayers — Toggle hawker centres, MRT exits, bus stops, and heat map overlays.
 
 ### Display score and percentile
 - 2.1 Hawker-OpportunityScore — Compute Dem, Sup, Acc, z-scale components, and produce Hᵢ with configurable weights and bandwidths.
@@ -110,11 +150,12 @@ sc2006-proj/
 - 5.4 ManageUsers (Admin) — Dedicated tab in AdminPage for user management.
 
 ### Authentication & profile
-- 6.1 ClientRegistration — Register (Full Name, Email, Password, Industry, optional Phone).
-- 6.2 Google Sign-in — Frontend uses GIS; backend verifies ID token and issues JWTs.
-- 6.3 UserLogin — Email/password login.
-- 6.4 Profile Management — Update name, industry, phone, picture URL; change password.
-- 6.5 ResetForgottenPassword — (backlog) email flow with one-time token.
+- 6.1 ClientRegistration — Register (Full Name, Email, Password, Industry, optional Phone); verification email dispatched.
+- 6.2 EmailVerification — Confirm `/auth/verify-email/confirm` token (required before login) and allow resend.
+- 6.3 Google Sign-in — Frontend uses GIS; backend verifies ID token and issues JWTs.
+- 6.4 UserLogin — Email/password login with email verification enforcement.
+- 6.5 PasswordReset — Request + confirm password reset via emailed token.
+- 6.6 Profile Management — Update name, industry, phone, picture URL; change password with policy enforcement.
 
 ## Tech Stack
 
@@ -142,8 +183,18 @@ Prerequisites
 DATABASE_URL=postgresql+psycopg://USER:PASSWORD@YOUR-NEON-HOST:5432/DBNAME?sslmode=require
 JWT_SECRET=change-me-in-production
 EXPORT_DIR=content/out
+APP_BASE_URL=http://127.0.0.1:5173
 GOOGLE_CLIENT_ID=your-google-oauth-client-id
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@example.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM="Hawker Opportunity <your-email@example.com>"
+TOKEN_TTL_EMAIL_VERIFY_HOURS=24
+TOKEN_TTL_PW_RESET_HOURS=1
 ```
+
+> Tip: SMTP settings are required for email verification and password reset flows. For local development you can point these to a test SMTP server such as Mailtrap.
 
 2) Bootstrap backend (install deps, create schema, optional seed)
 ```
@@ -162,6 +213,7 @@ npm run dev
 4) Admin workflow (UI)
 - Open `http://127.0.0.1:5173/#/admin`.
 - Login with the admin user.
+- If using a freshly created email/password admin, complete the email verification flow before attempting to sign in.
 - Paste a valid FeatureCollection JSON and click “Refresh Dataset”.
   - Backend ingests rows into Neon, marks the snapshot current, and exports `content/out/hawker_opportunities_ver2.geojson`.
 - Use the Snapshots list to restore any snapshot.
@@ -172,7 +224,12 @@ npm run dev
 - `/auth/login` (POST) — get access/refresh tokens
 - `/auth/google` (POST) — exchange Google ID token for app tokens
 - `/auth/me` (GET) — current user (id, email, role, display_name, industry, phone, picture_url)
-- `/auth/profile` (PUT) — update profile (display_name, industry, phone, picture_url, optional password change)
+- `/auth/profile` (GET/PUT) — read/update profile (display_name, industry, phone, picture_url, optional password change)
+- `/auth/verify-email/confirm` (POST) — confirm email verification token
+- `/auth/verify-email/resend` (POST) — resend verification email
+- `/auth/password-reset/request` (POST) — request password reset email
+- `/auth/password-reset/confirm` (POST) — reset password with token
+- `/auth/google/client-id` (GET) — expose Google Client ID to the frontend
 - `/admin/refresh` (POST, admin) — ingest FeatureCollection, set current, export file
 - `/admin/snapshots` (GET, admin) — list snapshots
 - `/admin/snapshots/{id}/restore` (POST, admin) — change current + export
@@ -183,14 +240,16 @@ User management (admin-only)
 - `/admin/users` (GET) — list users
 - `/admin/users` (POST) — create admin user (email + password); persists to Neon DB
 - `/admin/users/{id}` (DELETE) — delete a user
-Auth
-  
+
 
 ## Frontend routes and flows (current)
 
 - `#/home` — HomePage: project overview and references (data sources, methodology). Buttons: Sign in → `#/login`, Register → `#/register`.
 - `#/login` — LoginPage: shared for Admin and Client. After login: Admin → `#/admin`, Client → `#/map`.
-- `#/register` — RegisterPage: client   registration. Creates a client account in Neon Postgres via `/auth/register`. On success, redirect to `#/login`.
+- `#/register` — RegisterPage: client registration. Creates a client account via `/auth/register` then prompts to verify email.
+- `#/verify-email` — VerifyEmailPage: confirm token or resend verification email.
+- `#/forgot-password` — ForgotPasswordPage: request password reset email.
+- `#/reset-password` — ResetPasswordPage: submit token + new password.
 - `#/map` — Map (MainPage/MapView).
 - `#/admin` — AdminPage (guarded; non‑admin redirected to `#/login`).
 - `#/compare` — ComparisonPage.
