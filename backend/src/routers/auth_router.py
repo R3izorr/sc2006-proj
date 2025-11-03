@@ -21,13 +21,13 @@ class RegisterIn(BaseModel):
 
 @router.post("/register")
 def register(body: RegisterIn, session: Session = Depends(db_session)):
-    # Public client registration only; force role='user'
+    # Public client registration only; force role='client'
     try:
         return auth_controller.register(
             session,
             email=body.email,
             password=body.password,
-            role="user",
+            role="client",
             display_name=body.display_name,
             industry=body.industry,
             phone=body.phone,

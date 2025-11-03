@@ -21,7 +21,7 @@ def create_user(
     *,
     email: str,
     password_hash: Optional[str],
-    role: str = "user",
+    role: str = "client",
     display_name: Optional[str] = None,
     industry: Optional[str] = None,
     phone: Optional[str] = None,

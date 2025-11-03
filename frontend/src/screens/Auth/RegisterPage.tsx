@@ -20,6 +20,22 @@ export default function RegisterPage(){
       if (password !== password2){
         throw new Error('Passwords do not match')
       }
+      // Client-side password validation
+      if (password.length < 8){
+        throw new Error('Password must be at least 8 characters long')
+      }
+      if (!/[A-Z]/.test(password)){
+        throw new Error('Password must contain at least one uppercase letter')
+      }
+      if (!/[a-z]/.test(password)){
+        throw new Error('Password must contain at least one lowercase letter')
+      }
+      if (!/\d/.test(password)){
+        throw new Error('Password must contain at least one number')
+      }
+      if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(password)){
+        throw new Error('Password must contain at least one special character')
+      }
       const phoneOrUndef = phone.trim() ? phone.trim() : undefined
       await apiRegister(email.trim(), password, fullName.trim(), industry, phoneOrUndef)
       setError(null)
@@ -45,6 +61,7 @@ export default function RegisterPage(){
         <div className="mb-2">
           <label className="block text-sm text-gray-600 mb-1">Password</label>
           <input type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full border rounded px-2 py-1" required />
+          <div className="text-xs text-gray-500 mt-1">Minimum 8 characters, at least one uppercase, one lowercase, one number, and one special character.</div>
         </div>
         <div className="mb-2">
           <label className="block text-sm text-gray-600 mb-1">Re-enter Password</label>

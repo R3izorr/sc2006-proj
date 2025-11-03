@@ -52,6 +52,22 @@ export default function ProfilePage(){
         body.picture_url = formPictureUrl.trim() || null
       }
       if(newPw){
+        // Client-side password validation
+        if (newPw.length < 8){
+          throw new Error('Password must be at least 8 characters long')
+        }
+        if (!/[A-Z]/.test(newPw)){
+          throw new Error('Password must contain at least one uppercase letter')
+        }
+        if (!/[a-z]/.test(newPw)){
+          throw new Error('Password must contain at least one lowercase letter')
+        }
+        if (!/\d/.test(newPw)){
+          throw new Error('Password must contain at least one number')
+        }
+        if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(newPw)){
+          throw new Error('Password must contain at least one special character')
+        }
         body.new_password = newPw
         if(currentPw) body.current_password = currentPw
       }
@@ -77,7 +93,7 @@ export default function ProfilePage(){
           )}
           <div>
             <div className="text-lg font-semibold">{name}</div>
-            <div className="text-xs text-gray-500">{role || 'user'}</div>
+            <div className="text-xs text-gray-500">{role || 'client'}</div>
           </div>
         </div>
         {err && <div className="text-sm text-red-600 mb-2">{err}</div>}

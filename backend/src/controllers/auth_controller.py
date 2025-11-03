@@ -21,13 +21,16 @@ def register(
     *,
     email: str,
     password: str,
-    role: str = "user",
+    role: str = "client",
     display_name: Optional[str] = None,
     industry: Optional[str] = None,
     phone: Optional[str] = None,
 ) -> dict[str, Any]:
     if user_repo.get_user_by_email(session, email):
         raise ValueError("Email already registered")
+    valid, msg = auth_service.validate_password_policy(password)
+    if not valid:
+        raise ValueError(msg)
     ph = auth_service.hash_password(password)
     uid = user_repo.create_user(
         session,
@@ -136,6 +139,9 @@ def update_profile(
 
     # Handle password change if requested
     if new_password:
+        valid, msg = auth_service.validate_password_policy(new_password)
+        if not valid:
+            raise ValueError(msg)
         if u.password_hash:  # existing password present -> verify current
             if not current_password or not auth_service.verify_password(current_password, u.password_hash):
                 raise ValueError("Current password incorrect")
@@ -174,7 +180,7 @@ def login_with_google(session: Session, *, id_token_str: str) -> dict[str, Any]:
             if picture:
                 user.picture_url = picture
         else:
-            uid = user_repo.create_user(session, email=email, password_hash=None, role="user")
+            uid = user_repo.create_user(session, email=email, password_hash=None, role="client")
             user = user_repo.get_user_by_id(session, uid)
             user.google_sub = sub
             user.display_name = name

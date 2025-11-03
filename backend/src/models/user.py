@@ -18,7 +18,7 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
     password_hash: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    role: Mapped[str] = mapped_column(String(16), nullable=False, default="user")
+    role: Mapped[str] = mapped_column(String(16), nullable=False, default="client")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
     last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
@@ -30,7 +30,7 @@ class User(Base):
     phone: Mapped[Optional[str]] = mapped_column(Text)
 
     __table_args__ = (
-        CheckConstraint("role IN ('admin','user')", name="users_role_check"),
+        CheckConstraint("role IN ('admin','client')", name="users_role_check"),
     )
 
 
