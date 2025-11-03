@@ -11,6 +11,7 @@ export default function ProfilePage(){
   const role = me?.role || (typeof window !== 'undefined' ? (localStorage.getItem('userRole') || '') : '')
   const name = (me?.display_name && me.display_name.trim()) ? me.display_name : (email ? email.split('@')[0] : 'User')
   const initial = name ? name[0]?.toUpperCase() : 'U'
+  const industryLabel = me?.industry === 'student' ? 'Student' : me?.industry === 'businessmen' ? 'Businessmen' : (me?.industry || '—')
 
   useEffect(() => {
     const token = (typeof window !== 'undefined') ? (localStorage.getItem('accessToken') || '') : ''
@@ -110,7 +111,7 @@ export default function ProfilePage(){
             </div>
             <div className="flex items-center justify-between">
               <div className="text-gray-600">Industry</div>
-              <div>{me?.industry || '—'}</div>
+              <div>{industryLabel}</div>
             </div>
             <div className="flex items-center justify-between">
               <div className="text-gray-600">Phone</div>
@@ -129,9 +130,8 @@ export default function ProfilePage(){
             <div>
               <label className="block text-xs text-gray-600 mb-1">Industry</label>
               <select value={formIndustry} onChange={e=>setFormIndustry(e.target.value)} className="w-full border rounded px-2 py-1">
-                <option value="student">student</option>
-                <option value="businessmen">businessmen</option>
-                <option value="investmen">investmen</option>
+                <option value="student">Student</option>
+                <option value="businessmen">Businessmen</option>
               </select>
             </div>
             <div>

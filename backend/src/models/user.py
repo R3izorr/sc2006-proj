@@ -28,6 +28,12 @@ class User(Base):
     picture_url: Mapped[Optional[str]] = mapped_column(Text)
     industry: Mapped[Optional[str]] = mapped_column(Text)
     phone: Mapped[Optional[str]] = mapped_column(Text)
+    # Email verification / reset
+    email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    email_verification_token: Mapped[Optional[str]] = mapped_column(Text)
+    email_verification_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    password_reset_token: Mapped[Optional[str]] = mapped_column(Text)
+    password_reset_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (
         CheckConstraint("role IN ('admin','client')", name="users_role_check"),

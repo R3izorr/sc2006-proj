@@ -6,6 +6,9 @@ import HomePage from './screens/Home/HomePage'
 import LoginPage from './screens/Auth/LoginPage'
 import RegisterPage from './screens/Auth/RegisterPage'
 import ProfilePage from './screens/Profile/ProfilePage'
+import VerifyEmailPage from './screens/Auth/VerifyEmailPage'
+import ForgotPasswordPage from './screens/Auth/ForgotPasswordPage'
+import ResetPasswordPage from './screens/Auth/ResetPasswordPage'
 
 function useHash(): string {
   const [hash, setHash] = useState<string>(window.location.hash || '')
@@ -27,6 +30,9 @@ export default function App(){
     if(h.startsWith('/compare')) return 'compare'
     if(h.startsWith('/admin')) return 'admin'
     if(h.startsWith('/map')) return 'main'
+    if(h.startsWith('/verify-email')) return 'verify-email'
+    if(h.startsWith('/forgot-password')) return 'forgot-password'
+    if(h.startsWith('/reset-password')) return 'reset-password'
     if(h.startsWith('/profile')) return 'profile'
     return 'home'
   }, [hash])
@@ -42,6 +48,9 @@ export default function App(){
     return <LoginPage />
   }
   if(route === 'register') return <RegisterPage />
+  if(route === 'verify-email') return <VerifyEmailPage />
+  if(route === 'forgot-password') return <ForgotPasswordPage />
+  if(route === 'reset-password') return <ResetPasswordPage />
   if(route === 'compare') return <ComparisonPage />
   if(route === 'profile'){
     const token = (typeof window !== 'undefined') ? localStorage.getItem('accessToken') : null

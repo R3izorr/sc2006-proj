@@ -113,6 +113,56 @@ export async function apiGoogleLogin(idToken: string): Promise<LoginResponse> {
   return r.json()
 }
 
+// --- Email verification & password reset ---
+
+export async function apiVerifyEmailConfirm(token: string): Promise<{ ok: boolean }>{
+  const r = await fetch('/auth/verify-email/confirm', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token })
+  })
+  if(!r.ok){
+    const msg = await r.text().catch(()=>null)
+    throw new Error(msg || 'Verification failed')
+  }
+  return r.json()
+}
+
+export async function apiVerifyEmailResend(email: string): Promise<{ ok: boolean }>{
+  const r = await fetch('/auth/verify-email/resend', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  })
+  if(!r.ok){
+    const msg = await r.text().catch(()=>null)
+    throw new Error(msg || 'Resend failed')
+  }
+  return r.json()
+}
+
+export async function apiPasswordResetRequest(email: string): Promise<{ ok: boolean }>{
+  const r = await fetch('/auth/password-reset/request', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  })
+  if(!r.ok){
+    const msg = await r.text().catch(()=>null)
+    throw new Error(msg || 'Request failed')
+  }
+  return r.json()
+}
+
+export async function apiPasswordResetConfirm(token: string, newPassword: string): Promise<{ ok: boolean }>{
+  const r = await fetch('/auth/password-reset/confirm', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, new_password: newPassword })
+  })
+  if(!r.ok){
+    const msg = await r.text().catch(()=>null)
+    throw new Error(msg || 'Reset failed')
+  }
+  return r.json()
+}
+
 // --- Admin user management ---
 
 export type AdminUser = { id: string, email: string, role: string, created_at?: string }

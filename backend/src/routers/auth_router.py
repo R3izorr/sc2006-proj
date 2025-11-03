@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
+import os
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
@@ -81,6 +83,60 @@ def google_login(body: GoogleLoginIn, session: Session = Depends(db_session)):
         return auth_controller.login_with_google(session, id_token_str=body.id_token)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+
+class VerifyEmailConfirmIn(BaseModel):
+    token: str
+
+
+@router.post("/verify-email/confirm")
+def verify_email_confirm(body: VerifyEmailConfirmIn, session: Session = Depends(db_session)):
+    try:
+        return auth_controller.verify_email(session, token=body.token)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+class VerifyEmailResendIn(BaseModel):
+    email: EmailStr
+
+
+@router.post("/verify-email/resend")
+def verify_email_resend(body: VerifyEmailResendIn, session: Session = Depends(db_session)):
+    return auth_controller.resend_verification_email(session, email=body.email)
+
+
+class PwResetRequestIn(BaseModel):
+    email: EmailStr
+
+
+@router.post("/password-reset/request")
+def pw_reset_request(body: PwResetRequestIn, request: Request, session: Session = Depends(db_session)):
+    ip = request.client.host if request and request.client else None
+    return auth_controller.request_password_reset(session, email=body.email, ip_address=ip)
+
+
+class PwResetConfirmIn(BaseModel):
+    token: str
+    new_password: str
+
+
+@router.post("/password-reset/confirm")
+def pw_reset_confirm(body: PwResetConfirmIn, session: Session = Depends(db_session)):
+    try:
+        return auth_controller.reset_password(session, token=body.token, new_password=body.new_password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/google/client-id")
+def google_client_id():
+    cid = os.getenv("GOOGLE_CLIENT_ID") or ""
+    return JSONResponse({"client_id": cid}, headers={
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+    })
 
 
 class ProfileUpdateIn(BaseModel):
