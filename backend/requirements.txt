@@ -5,6 +5,8 @@ email-validator>=2.0
 SQLAlchemy>=2.0
 psycopg[binary]>=3.2
 PyJWT>=2.9
+google-auth>=1.2.0
+requests>=2.32.3
 # Pin bcrypt to avoid passlib backend incompatibilities on Windows
 passlib[bcrypt]>=1.7.4
 bcrypt==3.2.2

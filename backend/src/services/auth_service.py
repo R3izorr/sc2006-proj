@@ -13,10 +13,31 @@ from passlib.context import CryptContext
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
-from ..models.db_models import RefreshToken, User
+from ..models.refresh_token import RefreshToken
+from ..models.user import User
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def validate_password_policy(password: str) -> tuple[bool, str]:
+    """Validate password meets security policy.
+    
+    Returns (True, "") if valid, or (False, error_message) if invalid.
+    Policy: min 8 chars, uppercase, lowercase, number, special char.
+    """
+    import re
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter"
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter"
+    if not re.search(r"\d", password):
+        return False, "Password must contain at least one number"
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>_\-+=\[\]\\\/;'`~]", password):
+        return False, "Password must contain at least one special character"
+    return True, ""
 
 
 def hash_password(password: str) -> str:
@@ -112,7 +133,7 @@ def revoke_refresh_token(session: Session, *, refresh_token: str) -> int:
 
 def rotate_refresh_token(session: Session, *, old_refresh_token: str, user_id: str) -> Tuple[str, int]:
     revoke_refresh_token(session, refresh_token=old_refresh_token)
-    pair = issue_token_pair(user_id=user_id, role="user")
+    pair = issue_token_pair(user_id=user_id, role="client")
     create_refresh_token(session, user_id=user_id, refresh_token=pair.refresh_token, expires_at_ts=pair.refresh_expires_at)
     return pair.refresh_token, pair.refresh_expires_at
 

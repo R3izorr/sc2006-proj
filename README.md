@@ -23,22 +23,25 @@ sc2006-proj/
 │       │   ├── subzone_repo.py
 │       │   └── user_repo.py
 │       ├── models/
-│       │   ├── db_models.py              # SQLAlchemy models: Snapshot, Subzone, User, RefreshToken
-│       │   └── kernel_config.py          # (existing)
+│       │   ├── base.py                   # SQLAlchemy DeclarativeBase
+│       │   ├── snapshot.py               # Snapshot ORM
+│       │   ├── subzone.py                # Subzone ORM
+│       │   ├── user.py                   # User ORM
+│       │   ├── refresh_token.py          # RefreshToken ORM
 │       ├── routers/                      # HTTP endpoints
 │       │   ├── api_router.py             # Mounts all sub-routers with prefixes
 │       │   ├── admin_router.py           # /admin/* (JWT admin only; data + users)
 │       │   ├── data_router.py            # /data/* (file + DB endpoints)
 │       │   ├── auth_router.py            # /auth/* (login/register/change-password/...)
-│       │   ├── config_router.py          # /config/* (app config)
 │       │   ├── export_router.py          # /export/* (optional)
 │       │   ├── subzones_router.py        # /subzones/* (optional)
 │       │   └── deps.py                   # FastAPI deps (DB session, JWT guards)
 │       ├── schemas/                      # Pydantic request/response DTOs (expand as needed)
 │       └── services/                     # Business logic
 │           ├── snapshot_service.py       # Ingest/export snapshots
+│           ├── data_service.py           # Data assembly helpers
 │           ├── auth_service.py           # Hash/verify, JWT, refresh tokens
-│           └── scoring_service.py        # (optional) server-side compute
+│           └── config_service.py         # Config load/save (optional)
 ├── frontend/                             # React + Vite + TypeScript frontend
 │   ├── index.html
 │   ├── package.json
@@ -69,7 +72,7 @@ sc2006-proj/
 
 ### Folder roles
 - **backend/src/db**: SQLAlchemy engine/session; `get_session()` dependency.
-- **backend/src/models**: ORM models (`Snapshot`, `Subzone`, `User`, `RefreshToken`).
+- **backend/src/models**: Split ORM models (`base.py`, `snapshot.py`, `subzone.py`, `user.py`, `refresh_token.py`).
 - **backend/src/repositories**: Pure DB access (CRUD/queries): snapshots, subzones, users.
 - **backend/src/services**: Business logic (ingest/export, auth/JWT).
 - **backend/src/controllers**: Use-case orchestration (snapshots, auth, data).
@@ -77,7 +80,7 @@ sc2006-proj/
 - **frontend/src/screens/MainUI**: Map experience (details, search, region and rank filters, compare tray).
 - **frontend/src/screens/Admin**: Tabbed console with Data Management (upload GeoJSON, manage snapshots) and User Management (list/create admin/delete).
 - **frontend/src/screens/Compare**: Side‑by‑side comparison (includes Z_Dem, Z_Sup, Z_Acc, H_score, population, transport, hawkers).
-- **frontend/src/screens/Profile**: Profile and change password.
+- **frontend/src/screens/Profile**: Profile, update profile (name, industry, phone, picture, password).
 - **content/out**: Exported “current” GeoJSON; the map fetches this file.
 
 ## Functional Requirements (current)
@@ -99,24 +102,19 @@ sc2006-proj/
 ### Subzone details and comparison
 - 4.1 ShowSubzoneDetails — For a selected subzone, display demographics, nearby hawker centres, nearby MRT/bus, Dem/Sup/Acc component values, final Hᵢ, and simple charts.
 - 4.2 SubzoneComparison — Let users add up to two subzones to a tray and view side-by-side metrics with radar/table views. (a subpage in the main page map)
+- 4.3 ExportSubzoneDetails — Export the current subzone details view as PDF/PNG with metadata.
 
-### Admin data operations and export
+### Admin data operations and user management
 - 5.1 DataManagement — Upload FeatureCollection GeoJSON, ingest + recompute + export current snapshot.
 - 5.2 ManageSnapshots — List, view, and restore snapshots with version notes and timestamps.
-- 5.3 ExportSubzoneDetails — Export the current subzone details view as PDF/PNG with metadata.
-
-### Admin user management
 - 5.4 ManageUsers (Admin) — Dedicated tab in AdminPage for user management.
-  - Reads users from Neon Postgres (via SQLAlchemy `users` table).
-  - List users (email, role, created_at).
-  - Create another admin account.
-  - Delete a user account (with guardrails: cannot delete self; confirmation modal).
 
-### Authentication and password flows
-- 6.1 ClientRegistration — Register a client account.
-- 6.2 UserLogin — Log in with email and password; idle session timeout enforced.
-- 6.3 PasswordManagement — Change password while signed in (ProfilePage).
-- 6.4 ResetForgottenPassword — (backlog) email flow with one-time token and policy checks.
+### Authentication & profile
+- 6.1 ClientRegistration — Register (Full Name, Email, Password, Industry, optional Phone).
+- 6.2 Google Sign-in — Frontend uses GIS; backend verifies ID token and issues JWTs.
+- 6.3 UserLogin — Email/password login.
+- 6.4 Profile Management — Update name, industry, phone, picture URL; change password.
+- 6.5 ResetForgottenPassword — (backlog) email flow with one-time token.
 
 ## Tech Stack
 
@@ -144,6 +142,7 @@ Prerequisites
 DATABASE_URL=postgresql+psycopg://USER:PASSWORD@YOUR-NEON-HOST:5432/DBNAME?sslmode=require
 JWT_SECRET=change-me-in-production
 EXPORT_DIR=content/out
+GOOGLE_CLIENT_ID=your-google-oauth-client-id
 ```
 
 2) Bootstrap backend (install deps, create schema, optional seed)
@@ -169,7 +168,11 @@ npm run dev
 - Click “Back to Map” to see the latest export on the map. The frontend fetches `/data/opportunity.geojson` with cache‑busting.
 
 5) Useful API endpoints
+- `/auth/register` (POST) — create user (email, password, display_name, industry, phone?)
 - `/auth/login` (POST) — get access/refresh tokens
+- `/auth/google` (POST) — exchange Google ID token for app tokens
+- `/auth/me` (GET) — current user (id, email, role, display_name, industry, phone, picture_url)
+- `/auth/profile` (PUT) — update profile (display_name, industry, phone, picture_url, optional password change)
 - `/admin/refresh` (POST, admin) — ingest FeatureCollection, set current, export file
 - `/admin/snapshots` (GET, admin) — list snapshots
 - `/admin/snapshots/{id}/restore` (POST, admin) — change current + export
@@ -181,7 +184,7 @@ User management (admin-only)
 - `/admin/users` (POST) — create admin user (email + password); persists to Neon DB
 - `/admin/users/{id}` (DELETE) — delete a user
 Auth
-- `/auth/change-password` (POST) — change password for current user (auth required)
+  
 
 ## Frontend routes and flows (current)
 

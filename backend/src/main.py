@@ -41,12 +41,6 @@ def root():
 def healthz():
     return {"ok": True}
 
-@app.get("/data/opportunity.geojson")
-def get_geojson():
-    if not OUT_PATH.exists():
-        raise HTTPException(status_code=404, detail="GeoJSON not found in content/out/")
-    return FileResponse(str(OUT_PATH), media_type="application/geo+json")
-
 # Routers
 from .routers.api_router import api_router  # noqa: E402
 app.include_router(api_router)
