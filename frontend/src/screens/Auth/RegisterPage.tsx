@@ -39,8 +39,8 @@ export default function RegisterPage(){
       const phoneOrUndef = phone.trim() ? phone.trim() : undefined
       await apiRegister(email.trim(), password, fullName.trim(), industry, phoneOrUndef)
       setError(null)
-      setOk('Registration successful. Redirecting to sign in…')
-      setTimeout(()=>{ window.location.hash = '#/login' }, 800)
+      setOk('A verification email has been sent to your email. Please verify before signing in. Redirecting to sign in…')
+      setTimeout(()=>{ window.location.hash = '#/login' }, 3000)
     } catch(err: any){
       setError(err?.message || 'Registration failed')
     } finally { setBusy(false) }

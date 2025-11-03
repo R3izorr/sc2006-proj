@@ -113,7 +113,6 @@ export default function LoginPage(){
         <div className="flex items-center justify-center mb-2">
           <div ref={googleBtnRef} />
         </div>
-        <div className="text-xs text-gray-500 mt-1">Admins go to Admin Console; clients go to Map.</div>
         <div className="text-sm mt-3 text-center">
           <a href="#/register" className="text-blue-600">Don't have an account? Create one</a>
         </div>
