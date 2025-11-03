@@ -23,9 +23,12 @@ type Props = {
   onRegionIndexLoaded?: (index: Record<string,string[]>) => void
   rankTop?: 10 | 20 | 50 | null
   onRankBucketsLoaded?: (buckets: Record<'10'|'20'|'50', string[]>) => void
+  hideToolbarAndMenu?: boolean
+  hideToolbar?: boolean
+  defaultViewMode?: 'boundaries' | 'heat'
 }
 
-export default function MapView({ selectedId, onSelect, searchName, onNamesLoaded, regionName, onRegionsLoaded, onRegionIndexLoaded, rankTop, onRankBucketsLoaded }: Props){
+export default function MapView({ selectedId, onSelect, searchName, onNamesLoaded, regionName, onRegionsLoaded, onRegionIndexLoaded, rankTop, onRankBucketsLoaded, hideToolbarAndMenu, hideToolbar, defaultViewMode }: Props){
   const [raw, setRaw] = useState<any>(null)
   const [filtered, setFiltered] = useState<any>(null)
   const [hawkers, setHawkers] = useState<any>(null)
@@ -36,14 +39,18 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
   const mapRef = useRef<L.Map | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [viewOpen, setViewOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<'boundaries'|'heat'>('boundaries')
+  const [viewMode, setViewMode] = useState<'boundaries'|'heat'>(defaultViewMode || 'boundaries')
   const isAdmin = typeof window !== 'undefined' && (localStorage.getItem('userRole') || '').toLowerCase() === 'admin'
   const isLoggedIn = typeof window !== 'undefined' && !!localStorage.getItem('accessToken')
+  const [dataError, setDataError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
 
   useEffect(()=>{
+    setDataError(null)
     fetchOpportunityGeoJSON().then(gj => {
       setRaw(gj)
       setFiltered(gj)
+      setDataError(null)
       const n = gj.features.map((f:any)=> getSubzoneName(f.properties)).filter(Boolean)
       setNames(n as string[])
       nameIndexRef.current = buildNameIndex(gj.features)
@@ -82,13 +89,29 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
         buckets[k].sort((a,b)=> a.localeCompare(b))
       }
       onRankBucketsLoaded?.(buckets)
-    }).catch(console.error)
-    fetchHawkerCentresGeoJSON().then(setHawkers).catch(console.error)
-    fetchMrtExitsGeoJSON().then(setMrtExits).catch(console.error)
-    fetchBusStopsGeoJSON().then(setBusStops).catch(console.error)
-  },[])
+    }).catch(err => {
+      console.error('Failed to fetch opportunity GeoJSON:', err)
+      setDataError('Failed to load map data. Please check your connection.')
+    })
+    fetchHawkerCentresGeoJSON().then(setHawkers).catch(err => {
+      console.error('Failed to fetch hawker centres:', err)
+    })
+    fetchMrtExitsGeoJSON().then(setMrtExits).catch(err => {
+      console.error('Failed to fetch MRT exits:', err)
+    })
+    fetchBusStopsGeoJSON().then(setBusStops).catch(err => {
+      console.error('Failed to fetch bus stops:', err)
+    })
+  },[retryCount])
 
   const center = useMemo<LatLngExpression>(()=>[1.3521, 103.8198],[])
+
+  // Add zoom control to bottom-right after map loads
+  useEffect(() => {
+    if (mapRef.current) {
+      L.control.zoom({ position: 'bottomright' }).addTo(mapRef.current)
+    }
+  }, [])
 
   // --- Geometry helpers (point-in-polygon for Polygon / MultiPolygon) ---
   // Boundary is considered inside (inclusive)
@@ -326,7 +349,7 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
 
   return (
     <div style={{ height: '100%', position: 'relative' }}>
-      <MapContainer center={center} zoom={11} style={{ height: '100%' }} ref={mapRef as any}>
+      <MapContainer center={center} zoom={11} style={{ height: '100%' }} zoomControl={false} ref={mapRef as any}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" {...({ attribution: '© OpenStreetMap' } as any)} />
         {filtered && (viewMode==='boundaries' ? (
           <ChoroplethLayer data={filtered} selectedId={selectedId} onSelect={onSelect} />
@@ -344,13 +367,30 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
           <BusStopsLayer key={`bus-${selectedId ?? 'none'}`} data={busInSelected} />
         )}
       </MapContainer>
-      <Toolbar names={names} onSearch={handleSearch} onFilter={handleFilter} />
+      {!hideToolbarAndMenu && !hideToolbar && <Toolbar names={names} onSearch={handleSearch} onFilter={handleFilter} />}
+      
+      {/* Error message with retry button */}
+      {dataError && (
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1100, backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', textAlign: 'center', maxWidth: '400px' }}>
+          <div style={{ color: '#dc2626', fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>⚠️ Failed to Load Map Data</div>
+          <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: '16px' }}>{dataError}</div>
+          <button 
+            onClick={() => setRetryCount(c => c + 1)}
+            style={{ backgroundColor: '#7c3aed', color: 'white', padding: '10px 24px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6d28d9'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#7c3aed'}
+          >
+            Retry Loading
+          </button>
+        </div>
+      )}
+
       {/* Settings dropdown (top-right) */}
-      {isLoggedIn && (
+      {!hideToolbarAndMenu && isLoggedIn && (
       <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 1000, display: 'flex', gap: 8 }}>
         {/* Admin console (only for admins) */}
         {isAdmin && (
-          <button onClick={()=>{ window.location.hash = '#/admin' }} className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm opacity-90 hover:opacity-100">Admin Console</button>
+          <button onClick={()=>{ window.location.hash = '#/admin' }} className="px-3 py-1.5 rounded bg-violet-600 text-white text-sm opacity-90 hover:opacity-100">Admin Console</button>
         )}
         {/* View options */}
         <div style={{ position: 'relative' }}>

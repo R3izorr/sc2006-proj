@@ -18,7 +18,8 @@ export default function MainPage(){
   const [raw, setRaw] = useState<any | null>(null)
   const [exporting, setExporting] = useState(false)
   const [selectedForExport, setSelectedForExport] = useState<any[]>([])
-  const [trayCollapsed, setTrayCollapsed] = useState(false)
+  const [trayCollapsed, setTrayCollapsed] = useState(true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   // Load GeoJSON data for export functionality
   useEffect(()=>{
@@ -302,22 +303,107 @@ export default function MainPage(){
   return (
     <AppStateProvider>
       <div className="h-full relative">
-        <MapView selectedId={selectedId as any} onSelect={setSelected} searchName={searchName} onNamesLoaded={setAllNames} regionName={regionName} onRegionsLoaded={setRegions} onRegionIndexLoaded={setRegionIndex} rankTop={rankTop} onRankBucketsLoaded={setRankBuckets} />
+        <MapView selectedId={selectedId as any} onSelect={setSelected} searchName={searchName} onNamesLoaded={setAllNames} regionName={regionName} onRegionsLoaded={setRegions} onRegionIndexLoaded={setRegionIndex} rankTop={rankTop} onRankBucketsLoaded={setRankBuckets} hideToolbar={true} />
 
-        {/* Left tray */}
-        <div className="absolute left-2 top-2 bottom-2 w-[360px] bg-white rounded-md shadow p-3 z-[1000] overflow-auto">
-          <div className="flex items-center justify-between pb-1">
-            <h2 className="m-0 text-[18px] font-semibold">Explore Regions</h2>
-            {selected && (
-              <button aria-label="Close" onClick={()=>setSelected(null)} className="w-7 h-7 rounded bg-gray-100 hover:bg-gray-200">×</button>
+        {/* Sidebar Toggle Button - moves with sidebar */}
+        <div className={`absolute top-1/2 transform -translate-y-1/2 z-[1001] transition-all duration-300 ${sidebarCollapsed ? 'left-2' : 'left-[422px]'}`}>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="bg-white rounded-r-md shadow px-2 py-6 hover:bg-gray-50 flex items-center gap-1 text-sm text-gray-600 border border-l-0"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {sidebarCollapsed ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
             )}
+          </button>
+        </div>
+
+        {/* Left tray - slides in/out with animation */}
+        <div className={`absolute top-2 bottom-2 w-[420px] bg-white rounded-xl shadow px-5 py-3 z-[1000] flex flex-col justify-between gap-2 overflow-auto transition-all duration-300 ${sidebarCollapsed ? 'left-[-420px]' : 'left-2'}`}>
+          {/* Logo and website name at the top */}
+          <div className="flex flex-col items-center justify-center mt-2 mb-4">
+            <a
+              href="#/"
+              className="flex items-center gap-2 mb-2 justify-start w-full hover:opacity-80 transition-opacity"
+            >
+              <img
+                src="/images/hawker-logo.png"
+                alt="Hawkerrr Logo"
+                className="w-8 h-8 object-contain rounded"
+              />
+              <span className="font-bold text-lg text-gray-800" style={{ fontFamily: "Montserrat, sans-serif" }}>Hawkerrr</span>
+            </a>
           </div>
-          <div className="flex gap-3 border-b border-gray-200 pb-1 text-sm">
-            <button className={`${tab==='details' ? 'text-blue-600 font-semibold' : 'text-gray-400'}`} onClick={()=>setTab('details')}>Details</button>
-            <button className={`${tab==='search' ? 'text-blue-600 font-semibold' : 'text-gray-400'}`} onClick={()=>setTab('search')}>Search</button>
-            <button className={`${tab==='filter' ? 'text-blue-600 font-semibold' : 'text-gray-400'}`} onClick={()=>setTab('filter')}>Filter</button>
-            <button className={`${tab==='export' ? 'text-blue-600 font-semibold' : 'text-gray-400'}`} onClick={()=>setTab('export')}>Export</button>
+          {/* Tabs row */}
+          <div className="grid grid-cols-4 gap-0 border-b border-gray-200 pb-1 text-sm mb-1">
+            <button
+              className={`py-2 px-3 font-semibold flex flex-col items-center justify-center gap-1 transition-colors duration-150 ${
+                tab === "details"
+                  ? "bg-violet-100 text-violet-700 rounded-md shadow-sm"
+                  : "text-gray-400 hover:bg-gray-50 rounded-md"
+              }`}
+              onClick={() => setTab("details")}
+            >
+              <img
+                src="/icons/details_icon.png"
+                alt="Details"
+                className="w-5 h-5"
+              />
+              <span>Details</span>
+            </button>
+            <button
+              className={`py-2 px-3 font-semibold flex flex-col items-center justify-center gap-1 transition-colors duration-150 ${
+                tab === "search"
+                  ? "bg-violet-100 text-violet-700 rounded-md shadow-sm"
+                  : "text-gray-400 hover:bg-gray-50 rounded-md"
+              }`}
+              onClick={() => setTab("search")}
+            >
+              <img
+                src="/icons/search_icon.png"
+                alt="Search"
+                className="w-5 h-5"
+              />
+              <span>Search</span>
+            </button>
+            <button
+              className={`py-2 px-3 font-semibold flex flex-col items-center justify-center gap-1 transition-colors duration-150 ${
+                tab === "filter"
+                  ? "bg-violet-100 text-violet-700 rounded-md shadow-sm"
+                  : "text-gray-400 hover:bg-gray-50 rounded-md"
+              }`}
+              onClick={() => setTab("filter")}
+            >
+              <img
+                src="/icons/filter_icon.png"
+                alt="Filter"
+                className="w-5 h-5"
+              />
+              <span>Filter</span>
+            </button>
+            <button
+              className={`py-2 px-3 font-semibold flex flex-col items-center justify-center gap-1 transition-colors duration-150 ${
+                tab === "export"
+                  ? "bg-violet-100 text-violet-700 rounded-md shadow-sm"
+                  : "text-gray-400 hover:bg-gray-50 rounded-md"
+              }`}
+              onClick={() => setTab("export")}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Export</span>
+            </button>
           </div>
+
+          {/* Tab content below */}
+          <div className="flex-1">
 
           {/* Detail / Search */}
           {tab==='details' && (
@@ -341,7 +427,7 @@ export default function MainPage(){
                 />
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <button onClick={()=>toggleCompare(selected)} className={`w-full border py-1.5 rounded-md text-sm ${inCompare(selected) ? 'border-red-600 text-red-600 bg-red-50 hover:bg-red-100' : 'border-blue-600 text-blue-600 bg-blue-50 hover:bg-blue-100'}`}>
+                <button onClick={()=>toggleCompare(selected)} className={`w-full border py-1.5 rounded-md text-sm ${inCompare(selected) ? 'border-red-600 text-red-600 bg-red-50 hover:bg-red-100' : 'border-violet-600 text-violet-600 bg-violet-50 hover:bg-violet-100'}`}>
                   {inCompare(selected) ? '− Comparison' : '+ Comparison'}
                 </button>
                 <button onClick={()=>addToExport(selected)} disabled={isInExportList(selected)} className={`w-full border py-1.5 rounded-md text-sm ${isInExportList(selected) ? 'border-gray-300 text-gray-400 bg-gray-50' : 'border-green-600 text-green-700 bg-green-50 hover:bg-green-100'}`}>
@@ -408,7 +494,7 @@ export default function MainPage(){
               />
               <button
                 onClick={()=> setSearchName(searchInput.trim() || null)}
-                className="px-3 py-1 border rounded text-blue-600 border-blue-600 bg-blue-50 hover:bg-blue-100 text-sm"
+                className="px-3 py-1 border rounded text-violet-600 border-violet-600 bg-violet-50 hover:bg-violet-100 text-sm"
               >Search</button>
             </div>
             {suggestions.length > 0 && (
@@ -464,7 +550,7 @@ export default function MainPage(){
                   <button 
                     onClick={exportSelectedSubzones}
                     disabled={exporting}
-                    className="w-full border border-blue-600 text-blue-600 bg-blue-50 hover:bg-blue-100 py-2.5 rounded-md flex items-center justify-between px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full border border-violet-600 text-violet-600 bg-violet-50 hover:bg-violet-100 py-2.5 rounded-md flex items-center justify-between px-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="flex items-center gap-2">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -472,10 +558,10 @@ export default function MainPage(){
                       </svg>
                       {exporting ? 'Exporting...' : `Export ${selectedForExport.length} Subzone${selectedForExport.length !== 1 ? 's' : ''}`}
                     </span>
-                    <span className="text-xs bg-blue-100 px-2 py-0.5 rounded">.xlsx</span>
+                    <span className="text-xs bg-violet-100 px-2 py-0.5 rounded">.xlsx</span>
                   </button>
 
-                  <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-gray-600">
+                  <div className="mt-2 p-2 bg-violet-50 rounded text-xs text-gray-600">
                     <div className="font-semibold mb-1">💡 Tip:</div>
                     <div>Click on subzones in the map, then click "+ Export" in the Details tab to add them here.</div>
                   </div>
@@ -553,6 +639,7 @@ export default function MainPage(){
             </div>
           </div>
           )}
+          </div>
         </div>
 
         {/* Comparison tray (bottom) - Collapsible */}
@@ -603,13 +690,13 @@ export default function MainPage(){
                   const fPlanning = fp.PLN_AREA_N ?? fp.planning_area ?? fp.planarea
                   const fRank = fp.H_rank ?? fp.h_rank
                   return (
-                    <div key={i} className={`border rounded-lg p-3 min-h-[100px] flex flex-col justify-between ${f ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <div key={i} className={`border rounded-lg p-3 min-h-[100px] flex flex-col justify-between ${f ? 'border-violet-300 bg-violet-50' : 'border-gray-200 bg-gray-50'}`}>
                       {f ? (
                         <>
                           <div>
                             <div className="font-semibold text-sm mb-1">{fName}</div>
                             {fPlanning && <div className="text-xs text-gray-600 mb-1">{fPlanning}</div>}
-                            {fRank && <div className="text-xs text-blue-600 font-medium">Rank {fRank}</div>}
+                            {fRank && <div className="text-xs text-violet-600 font-medium">Rank {fRank}</div>}
                           </div>
                           <button onClick={()=> fid && removeCompareById(String(fid))} className="text-xs text-red-600 hover:text-red-800 py-1 px-2 rounded hover:bg-red-100 text-left">
                             × Remove
@@ -619,7 +706,7 @@ export default function MainPage(){
                         <div className="flex flex-col items-center justify-center text-gray-400 text-center h-full">
                           <div className="text-sm mb-2">Slot {i + 1} empty</div>
                           {canAddSelected && (
-                            <button onClick={()=> addToCompare(selected)} className="text-xs px-3 py-1.5 rounded border border-blue-600 text-blue-600 bg-white hover:bg-blue-50">
+                            <button onClick={()=> addToCompare(selected)} className="text-xs px-3 py-1.5 rounded border border-violet-600 text-violet-600 bg-white hover:bg-violet-50">
                               + Add selected
                             </button>
                           )}
@@ -640,7 +727,7 @@ export default function MainPage(){
                       const id2 = String(itemId(compare[1]))
                       window.location.hash = `#/compare?ids=${encodeURIComponent(id1)},${encodeURIComponent(id2)}`
                     }}
-                    className="px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700 text-sm font-medium shadow-sm"
+                    className="px-4 py-2 rounded text-white bg-violet-600 hover:bg-violet-700 text-sm font-medium shadow-sm"
                   >
                     Compare Subzones →
                   </button>
