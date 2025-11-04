@@ -9,41 +9,37 @@ sc2006-proj/
 ├── backend/                              # FastAPI backend (Python)
 │   ├── requirements.txt                  # Backend dependencies
 │   ├── sql/
-│   │   ├── 001_init.sql                  # Core schema (snapshots, subzones, users, tokens)
-│   │   ├── 002_google_auth.sql           # Google OAuth user mapping
-│   │   ├── 003_register_fields.sql       # Profile fields (display name, industry, phone)
-│   │   ├── 005_email_verification.sql    # Email verification tokens
-│   │   └── 006_password_reset.sql        # Password reset tokens
+│   │   └── schema.sql                    # Complete database schema (users, tokens, snapshots, subzones)
 │   └── src/
 │       ├── main.py                       # Server entrypoint, CORS, router mounting
 │       ├── db/
 │       │   └── __init__.py               # SQLAlchemy engine + get_session()
 │       ├── controllers/                  # Orchestrates use-cases across services/repos
-│       │   ├── admin_controller.py
-│       │   ├── auth_controller.py
-│       │   └── data_controller.py
+│       │   ├── admin_controller.py       # Admin operations (data refresh, user management)
+│       │   ├── auth_controller.py        # Auth flows (register, login, profile, email verification)
+│       │   └── data_controller.py        # Data assembly and GeoJSON serving
 │       ├── repositories/                 # Data access layer (DB CRUD/queries)
-│       │   ├── snapshot_repo.py
-│       │   ├── subzone_repo.py
-│       │   └── user_repo.py
-│       ├── models/
+│       │   ├── snapshot_repo.py          # Snapshot database operations
+│       │   ├── subzone_repo.py           # Subzone database operations
+│       │   └── user_repo.py              # User database operations
+│       ├── models/                       # SQLAlchemy ORM models
 │       │   ├── base.py                   # SQLAlchemy DeclarativeBase
-│       │   ├── refresh_token.py
-│       │   ├── snapshot.py
-│       │   ├── subzone.py
-│       │   └── user.py
+│       │   ├── refresh_token.py          # Refresh token model
+│       │   ├── snapshot.py               # Snapshot model
+│       │   ├── subzone.py                # Subzone model
+│       │   └── user.py                   # User model (with email verification & password reset)
 │       ├── routers/                      # HTTP endpoints
 │       │   ├── api_router.py             # Mounts all sub-routers with prefixes
-│       │   ├── admin_router.py           # /admin/* (JWT admin only; data + users)
+│       │   ├── admin_router.py           # /admin/* (JWT admin only; data + user management)
 │       │   ├── auth_router.py            # /auth/* (login/register/profile/email workflows)
-│       │   ├── data_router.py            # /data/* (secured GeoJSON + DB views)
-│       │   ├── export_router.py          # /export/* (optional)
-│       │   ├── subzones_router.py        # /subzones/* (optional)
+│       │   ├── data_router.py            # /data/* (secured GeoJSON endpoints)
+│       │   ├── export_router.py          # /export/* (data export endpoints)
+│       │   ├── subzones_router.py        # /subzones/* (subzone queries)
 │       │   └── deps.py                   # FastAPI deps (DB session, JWT guards)
 │       ├── schemas/                      # Pydantic request/response DTOs
-│       │   ├── auth_schemas.py
-│       │   ├── export_schemas.py
-│       │   └── subzone_schemas.py
+│       │   ├── auth_schemas.py           # Auth-related schemas
+│       │   ├── export_schemas.py         # Export-related schemas
+│       │   └── subzone_schemas.py        # Subzone-related schemas
 │       └── services/                     # Business logic
 │           ├── auth_service.py           # Hash/verify, JWT, password policy, refresh tokens
 │           ├── data_service.py           # Data assembly helpers
@@ -52,49 +48,64 @@ sc2006-proj/
 ├── frontend/                             # React + Vite + TypeScript frontend
 │   ├── index.html
 │   ├── package.json
-│   ├── vite.config.ts                    # Dev server + proxy to backend (/data,/auth,/admin)
+│   ├── postcss.config.cjs                # PostCSS configuration
+│   ├── tailwind.config.cjs               # Tailwind CSS configuration
+│   ├── tsconfig.json                     # TypeScript configuration
+│   ├── vite.config.ts                    # Dev server + proxy to backend
 │   ├── public/
-│   │   └── icons/                        # Map legend + POI icons
-│   │       ├── bus.svg
-│   │       ├── hawker.svg
-│   │       └── mrt-exit.svg
+│   │   ├── icons/                        # UI icons
+│   │   │   ├── bus.svg
+│   │   │   ├── hawker.svg
+│   │   │   ├── mrt-exit.svg
+│   │   │   ├── admin_icon.png
+│   │   │   ├── details_icon.png
+│   │   │   ├── filter_icon.png
+│   │   │   ├── logout_icon.png
+│   │   │   ├── profile_icon.png
+│   │   │   ├── search_icon.png
+│   │   │   └── settings_icon.png
+│   │   └── images/                       # UI images & backgrounds
+│   │       ├── hawker-logo.png
+│   │       ├── HomePageBG.jpg
+│   │       └── login-bg-unsplash.jpg
 │   └── src/
-│       ├── App.tsx
-│       ├── main.tsx
-│       ├── index.css
+│       ├── App.tsx                       # Main app with routing & auth guards
+│       ├── main.tsx                      # Entry point
+│       ├── index.css                     # Global styles
 │       ├── components/
 │       │   └── Map/                      # Leaflet map and layers
-│       │       ├── MapView.tsx
-│       │       ├── ChoroplethLayer.tsx
-│       │       ├── HawkerCentresLayer.tsx
-│       │       ├── MrtExitsLayer.tsx
-│       │       ├── BusStopsLayer.tsx
-│       │       ├── HeatMapLayer.tsx
-│       │       └── Toolbar.tsx
+│       │       ├── MapView.tsx           # Main map component
+│       │       ├── ChoroplethLayer.tsx   # Subzone polygons with color coding
+│       │       ├── HawkerCentresLayer.tsx  # Hawker centre markers
+│       │       ├── MrtExitsLayer.tsx     # MRT exit markers
+│       │       ├── BusStopsLayer.tsx     # Bus stop markers
+│       │       └── HeatMapLayer.tsx      # Heat map visualization
 │       ├── contexts/
-│       │   └── AppStateContext.tsx
+│       │   └── AppStateContext.tsx       # Global state (selected subzone, compare list)
 │       ├── screens/
 │       │   ├── Home/
 │       │   │   └── HomePage.tsx          # Landing page & overview
 │       │   ├── MainUI/
-│       │   │   └── MainPage.tsx          # Map & exploration (details, filters, compare)
+│       │   │   └── MainPage.tsx          # Map & exploration (requires auth)
 │       │   ├── Compare/
-│       │   │   └── ComparisonPage.tsx    # Side-by-side comparison tray
+│       │   │   └── ComparisonPage.tsx    # Side-by-side comparison (requires auth)
 │       │   ├── Admin/
-│       │   │   └── AdminPage.tsx         # Data & user management console
+│       │   │   └── AdminPage.tsx         # Data & user management (requires admin role)
 │       │   ├── Profile/
-│       │   │   └── ProfilePage.tsx       # Profile management & password change
+│       │   │   └── ProfilePage.tsx       # Profile management (requires auth)
 │       │   └── Auth/
-│       │       ├── LoginPage.tsx
-│       │       ├── RegisterPage.tsx
-│       │       ├── ForgotPasswordPage.tsx
-│       │       ├── ResetPasswordPage.tsx
-│       │       └── VerifyEmailPage.tsx
+│       │       ├── LoginPage.tsx         # User login
+│       │       ├── RegisterPage.tsx      # User registration
+│       │       ├── ForgotPasswordPage.tsx  # Password reset request
+│       │       ├── ResetPasswordPage.tsx   # Password reset confirmation
+│       │       └── VerifyEmailPage.tsx     # Email verification
 │       ├── services/
 │       │   └── api.ts                    # API client wrappers (data + auth + admin)
+│       ├── theme/
+│       │   └── heroStyles.ts             # Hero section styling utilities
 │       └── utils/
-│           ├── colorScale.ts
-│           └── geo.ts
+│           ├── colorScale.ts             # Color scale calculations
+│           └── geo.ts                    # Geographic utilities
 ├── content/                              # Datasets & the exported GeoJSON used by the map
 │   ├── MasterPlan2019SubzoneBoundaryNoSeaGEOJSON.geojson
 │   ├── HawkerCentresGEOJSON.geojson
@@ -102,7 +113,7 @@ sc2006-proj/
 │   ├── bus_stops.geojson
 │   ├── ResidentPopulationbyPlanningAreaSubzoneofResidenceAgeGroupandSexCensusofPopulation2020.csv
 │   └── out/
-│       └── hawker_opportunities_ver2.geojson   # “current” snapshot export
+│       └── hawker_opportunities_ver2.geojson   # "current" snapshot export
 ├── README.md
 ├── ScoreDemo.py                          # Scoring demo / notebook-style script
 └── bootstrap.py                          # One-shot setup: create schema/seed, optional export
@@ -242,18 +253,44 @@ User management (admin-only)
 
 ## Frontend routes and flows (current)
 
+### Public Routes (No Authentication Required)
 - `#/home` — HomePage: project overview and references (data sources, methodology). Buttons: Sign in → `#/login`, Register → `#/register`.
-- `#/login` — LoginPage: shared for Admin and Client. After login: Admin → `#/admin`, Client → `#/map`.
+- `#/login` — LoginPage: shared for Admin and Client. After login: Admin → `#/admin`, Client → `#/map`. If already logged in, redirects automatically.
 - `#/register` — RegisterPage: client registration. Creates a client account via `/auth/register` then prompts to verify email.
 - `#/verify-email` — VerifyEmailPage: confirm token or resend verification email.
 - `#/forgot-password` — ForgotPasswordPage: request password reset email.
 - `#/reset-password` — ResetPasswordPage: submit token + new password.
-- `#/map` — Map (MainPage/MapView).
-- `#/admin` — AdminPage (guarded; non‑admin redirected to `#/login`).
-- `#/compare` — ComparisonPage.
-- `#/profile` — ProfilePage (change password).
-- AdminPage contains two tabs: Data Management (GeoJSON refresh/snapshots) and User Management (list users, create admin, delete user).
-- User Management reads from/writes to Neon DB (create/delete reflect immediately).
+
+### Protected Routes (Authentication Required)
+- `#/map` — MainPage/MapView: Interactive map experience (details, search, filters, compare tray). **Requires login**.
+- `#/compare` — ComparisonPage: Side-by-side comparison of subzones. **Requires login**.
+- `#/profile` — ProfilePage: Profile management and password change. **Requires login**.
+- `#/admin` — AdminPage: Data & user management console. **Requires login + admin role**. Non-admin users are redirected to `#/login`.
+  - Data Management tab: GeoJSON refresh/snapshots
+  - User Management tab: list users, create admin, delete user (reads/writes to Neon DB)
+
+## Troubleshooting
+
+### Permission denied error on macOS/Linux
+
+If you encounter a "permission denied" error when running `npm run dev` on macOS or Linux (e.g., `EACCES: permission denied, open '/path/to/node_modules/.bin/vite'`), this is due to missing execute permissions on the binary files.
+
+**Quick fix:**
+```bash
+cd frontend
+chmod +x node_modules/.bin/*
+npm run dev
+```
+
+**Alternative (clean reinstall):**
+```bash
+cd frontend
+rm -rf node_modules package-lock.json
+npm install
+npm run dev
+```
+
+This issue occurs because Git doesn't preserve Unix file permissions when files are committed from Windows. The `npm install` should normally set these permissions, but sometimes they need to be manually fixed.
 
 
 

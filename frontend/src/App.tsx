@@ -51,22 +51,32 @@ export default function App(){
   if(route === 'verify-email') return <VerifyEmailPage />
   if(route === 'forgot-password') return <ForgotPasswordPage />
   if(route === 'reset-password') return <ResetPasswordPage />
-  if(route === 'compare') return <ComparisonPage />
+  if(route === 'compare') {
+    const token = (typeof window !== 'undefined') ? localStorage.getItem('accessToken') : null
+    if(!token){ window.location.hash = '#/login'; return null }
+    return <ComparisonPage />
+  }
   if(route === 'profile'){
     const token = (typeof window !== 'undefined') ? localStorage.getItem('accessToken') : null
     if(!token){ window.location.hash = '#/login'; return null }
     return <ProfilePage />
   }
   if(route === 'admin') {
-    // Simple guard: require admin role; otherwise go to login
+    const token = (typeof window !== 'undefined') ? localStorage.getItem('accessToken') : null
     const role = (localStorage.getItem('userRole') || '').toLowerCase()
-    if(role !== 'admin'){
+    if(!token || role !== 'admin'){
       window.location.hash = '#/login'
       return null
     }
     return <AdminPage />
   }
-  return <MainPage />
+  if(route === 'main'){
+    const token = (typeof window !== 'undefined') ? localStorage.getItem('accessToken') : null
+    if(!token){ window.location.hash = '#/login'; return null }
+    return <MainPage />
+  }
+  // Default fallback: redirect to home for unknown routes
+  return <HomePage />
 }
 
 

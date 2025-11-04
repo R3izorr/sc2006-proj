@@ -426,7 +426,7 @@ export default function MainPage(){
                   total={popTotal}
                 />
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="mt-8 grid grid-cols-2 gap-2 w-full px-3 pb-3">
                 <button onClick={()=>toggleCompare(selected)} className={`w-full border py-1.5 rounded-md text-sm ${inCompare(selected) ? 'border-red-600 text-red-600 bg-red-50 hover:bg-red-100' : 'border-violet-600 text-violet-600 bg-violet-50 hover:bg-violet-100'}`}>
                   {inCompare(selected) ? '− Comparison' : '+ Comparison'}
                 </button>
