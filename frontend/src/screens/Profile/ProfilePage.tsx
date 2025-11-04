@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { apiMe, apiUpdateProfile, type Me } from '../../services/api'
+import { heroBackgroundStyle, heroOverlayClass } from '../../theme/heroStyles'
 
 export default function ProfilePage(){
   const [me, setMe] = useState<Me | null>(null)
@@ -48,9 +49,7 @@ export default function ProfilePage(){
         display_name: formName.trim() || null,
         industry: formIndustry || null,
         phone: formPhone.trim() || null,
-      }
-      if(formPictureUrl !== (me.picture_url || '')){
-        body.picture_url = formPictureUrl.trim() || null
+        picture_url: formPictureUrl.trim() || null,
       }
       if(newPw){
         // Client-side password validation
@@ -74,8 +73,15 @@ export default function ProfilePage(){
       }
       const updated = await apiUpdateProfile(token, body)
       setMe(updated)
-      setOk('Profile updated')
+      setOk('Profile updated successfully!')
       setEdit(false)
+      // Force image reload if picture URL changed
+      if(formPictureUrl !== (me.picture_url || '')){
+        // Add a small delay to ensure the success message is visible
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
+      }
     } catch(e: any){
       setErr(e?.message || 'Failed to update profile')
     } finally {
@@ -84,78 +90,168 @@ export default function ProfilePage(){
   }
 
   return (
-    <div className="h-full flex items-center justify-center bg-gray-50">
-      <div className="bg-white border border-gray-200 rounded p-6 w-[420px] shadow">
-        <div className="flex items-center gap-3 mb-4">
+    <div
+      className="min-h-screen relative flex items-center justify-center px-4 py-16"
+      style={heroBackgroundStyle}
+    >
+      <div className={heroOverlayClass} aria-hidden="true" />
+      <div className="relative w-full max-w-4xl bg-white/90 rounded-[2.5rem] shadow-[0_35px_90px_-25px_rgba(15,15,45,0.55)] backdrop-blur-2xl border border-white/40 p-10 md:px-20 flex flex-col gap-8">
+        <div className="flex flex-col items-center gap-3 mb-6">
           {me?.picture_url ? (
-            <img src={me.picture_url} alt={name} className="w-12 h-12 rounded-full object-cover" />
+            <img
+              src={me.picture_url}
+              alt={name}
+              className="w-20 h-20 rounded-full object-cover border-4 border-violet-200 shadow"
+            />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-semibold">{initial}</div>
+            <div className="w-20 h-20 rounded-full bg-violet-600 text-white flex items-center justify-center text-3xl font-bold border-4 border-violet-200 shadow">
+              {initial}
+            </div>
           )}
-          <div>
-            <div className="text-lg font-semibold">{name}</div>
-            <div className="text-xs text-gray-500">{role || 'client'}</div>
+          <div className="text-3xl font-bold text-black mt-2">{name}</div>
+          <div className="text-base text-gray-500">
+            {(role || "user").charAt(0).toUpperCase() +
+              (role || "user").slice(1)}
           </div>
         </div>
-        {err && <div className="text-sm text-red-600 mb-2">{err}</div>}
-        {ok && <div className="text-sm text-green-700 mb-2">{ok}</div>}
-        <div className="space-y-2 text-sm">
+        {err && (
+          <div className="text-sm text-red-600 mb-2 text-center">{err}</div>
+        )}
+        {ok && (
+          <div className="text-sm text-green-700 mb-2 text-center">{ok}</div>
+        )}
+        <div className="space-y-6 text-lg">
           <div className="flex items-center justify-between">
-            <div className="text-gray-600">Email</div>
-            <div className="font-mono">{email || '—'}</div>
+            <div className="text-gray-700 text-lg">Email</div>
+            <div className="font-mono text-right text-lg">{email || "—"}</div>
           </div>
-          {!edit && <>
+          {!edit && (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="text-gray-700 text-lg">Industry</div>
+                <div className="text-lg">{industryLabel}</div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="text-gray-700 text-lg">Phone</div>
+                <div className="text-lg">{me?.phone || "—"}</div>
+              </div>
+            </>
+          )}
+          {edit && (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Name</label>
+                <input
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder={name}
+                  className="w-full border border-gray-300 rounded px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-violet-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">
+                  Profile picture URL
+                </label>
+                <input
+                  value={formPictureUrl}
+                  onChange={(e) => setFormPictureUrl(e.target.value)}
+                  placeholder={
+                    me?.picture_url || "https://example.com/photo.jpg"
+                  }
+                  className="w-full border border-gray-300 rounded px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-violet-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">
+                  Industry
+                </label>
+                <select
+                  value={formIndustry}
+                  onChange={(e) => setFormIndustry(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-violet-400"
+                >
+                  <option value="student">Student</option>
+                  <option value="businessmen">Businessmen</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">
+                  Phone
+                </label>
+                <input
+                  value={formPhone}
+                  onChange={(e) => setFormPhone(e.target.value)}
+                  placeholder={me?.phone || ""}
+                  className="w-full border border-gray-300 rounded px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-violet-400"
+                />
+              </div>
+              {!me?.google_sub && (
+                <div className="pt-2">
+                  <div className="text-sm text-gray-500 mb-1">
+                    Change password (optional)
+                  </div>
+                  <input
+                    type="password"
+                    placeholder="Current password"
+                    value={currentPw}
+                    onChange={(e) => setCurrentPw(e.target.value)}
+                    className="w-full border border-gray-300 rounded px-4 py-3 text-base mb-3 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                  />
+                  <input
+                    type="password"
+                    placeholder="New password"
+                    value={newPw}
+                    onChange={(e) => setNewPw(e.target.value)}
+                    className="w-full border border-gray-300 rounded px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-violet-400"
+                  />
+                  <div className="text-xs text-gray-500 mt-1">
+                    Minimum 8 characters, at least one uppercase, one lowercase, one
+                    number, and one special character.
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {!edit && (
             <div className="flex items-center justify-between">
-              <div className="text-gray-600">Name</div>
-              <div>{name || '—'}</div>
+              <div className="text-gray-700 text-lg">Password</div>
+              <div className="font-mono text-lg">********</div>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="text-gray-600">Industry</div>
-              <div>{industryLabel}</div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="text-gray-600">Phone</div>
-              <div>{me?.phone || '—'}</div>
-            </div>
-          </>}
-          {edit && <div className="space-y-2">
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Name</label>
-              <input value={formName} onChange={e=>setFormName(e.target.value)} className="w-full border rounded px-2 py-1" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Profile picture URL</label>
-              <input value={formPictureUrl} onChange={e=>setFormPictureUrl(e.target.value)} className="w-full border rounded px-2 py-1" placeholder="https://example.com/photo.jpg" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Industry</label>
-              <select value={formIndustry} onChange={e=>setFormIndustry(e.target.value)} className="w-full border rounded px-2 py-1">
-                <option value="student">Student</option>
-                <option value="businessmen">Businessmen</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Phone</label>
-              <input value={formPhone} onChange={e=>setFormPhone(e.target.value)} className="w-full border rounded px-2 py-1" />
-            </div>
-            {!me?.google_sub && <div className="pt-2">
-              <div className="text-xs text-gray-500 mb-1">Change password (optional)</div>
-              <input type="password" placeholder="Current password" value={currentPw} onChange={e=>setCurrentPw(e.target.value)} className="w-full border rounded px-2 py-1 mb-2" />
-              <input type="password" placeholder="New password" value={newPw} onChange={e=>setNewPw(e.target.value)} className="w-full border rounded px-2 py-1" />
-            </div>}
-          </div>}
-          {!edit && <div className="flex items-center justify-between">
-            <div className="text-gray-600">Password</div>
-            <div className="font-mono">********</div>
-          </div>}
+          )}
         </div>
-        <div className="mt-6 flex justify-between">
-          <a href="#/map" className="px-3 py-1.5 rounded border">Back to Map</a>
-          {!edit && <button onClick={()=>setEdit(true)} className="px-3 py-1.5 rounded text-white bg-blue-600">Update profile</button>}
-          {edit && <div className="flex gap-2">
-            <button onClick={()=>setEdit(false)} disabled={saving} className="px-3 py-1.5 rounded border">Cancel</button>
-            <button onClick={handleSave} disabled={saving} className="px-3 py-1.5 rounded text-white bg-blue-600">{saving ? 'Saving…' : 'Save changes'}</button>
-          </div>}
+        <div className="mt-8 flex justify-between gap-4 text-lg">
+          <a
+            href="#/map"
+            className="px-5 py-2 rounded-lg border border-violet-600 text-violet-700 font-semibold hover:bg-violet-50 transition text-lg"
+          >
+            Back to Map
+          </a>
+          {!edit && (
+            <button
+              onClick={() => setEdit(true)}
+              className="px-5 py-2 rounded-lg text-white bg-violet-600 font-semibold shadow hover:bg-violet-700 transition text-lg"
+            >
+              Update profile
+            </button>
+          )}
+          {edit && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEdit(false)}
+                disabled={saving}
+                className="px-5 py-2 rounded-lg border border-violet-600 text-violet-700 font-semibold hover:bg-violet-50 transition text-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-5 py-2 rounded-lg text-white bg-violet-600 font-semibold shadow hover:bg-violet-700 transition text-lg"
+              >
+                {saving ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

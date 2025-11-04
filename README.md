@@ -128,34 +128,32 @@ sc2006-proj/
 - 1.1 DisplaySubzones — Draw URA subzone polygons. Polygons are hoverable and clickable.
 - 1.2 ChoroplethLayer — Shade subzones by Hawker-Opportunity Score with legend and normalized colour scale.
 - 1.3 MapInteractionControls — Zoom, pan, and hover interactions on the subzone map.
-- 1.4 PointsOfInterestLayers — Toggle hawker centres, MRT exits, bus stops, and heat map overlays.
 
 ### Display score and percentile
 - 2.1 Hawker-OpportunityScore — Compute Dem, Sup, Acc, z-scale components, and produce Hᵢ with configurable weights and bandwidths.
-- 2.2 ShowSubzoneRankPercentile — Show each selected subzone’s city-wide percentile for Hᵢ.
+- 2.2 ShowSubzoneRank — Show each selected subzone’s city-wide percentile for Hᵢ.
 
 ### Filtering and search
-- 3.1 FilterByGeography — Filter visible subzones by region and optional subzone.
-- 3.2 FilterByScoreQuantile — Filter by Top 10% / 25% / 50% or All; update legend accordingly.
+- 3.1 FilterByRegion — Filter visible subzones by region. 
+- 3.2 FilterByRank — Filter by Top 10% / 25% / 50% or All; update legend accordingly.
 - 3.3 SearchBySubzoneName — Autocomplete search; zoom and highlight on selection.
 
 ### Subzone details and comparison
 - 4.1 ShowSubzoneDetails — For a selected subzone, display demographics, nearby hawker centres, nearby MRT/bus, Dem/Sup/Acc component values, final Hᵢ, and simple charts.
 - 4.2 SubzoneComparison — Let users add up to two subzones to a tray and view side-by-side metrics with radar/table views. (a subpage in the main page map)
-- 4.3 ExportSubzoneDetails — Export the current subzone details view as PDF/PNG with metadata.
+- 4.3 ExportSubzoneDetails — Export subzone details as an Excel file.
 
 ### Admin data operations and user management
-- 5.1 DataManagement — Upload FeatureCollection GeoJSON, ingest + recompute + export current snapshot.
+- 5.1 ManageData — Upload FeatureCollection GeoJSON, ingest + recompute + export current snapshot.
 - 5.2 ManageSnapshots — List, view, and restore snapshots with version notes and timestamps.
-- 5.4 ManageUsers (Admin) — Dedicated tab in AdminPage for user management.
+- 5.4 ManageUsers — Dedicated tab in AdminPage for user management.
 
 ### Authentication & profile
 - 6.1 ClientRegistration — Register (Full Name, Email, Password, Industry, optional Phone); verification email dispatched.
-- 6.2 EmailVerification — Confirm `/auth/verify-email/confirm` token (required before login) and allow resend.
-- 6.3 Google Sign-in — Frontend uses GIS; backend verifies ID token and issues JWTs.
-- 6.4 UserLogin — Email/password login with email verification enforcement.
-- 6.5 PasswordReset — Request + confirm password reset via emailed token.
-- 6.6 Profile Management — Update name, industry, phone, picture URL; change password with policy enforcement.
+- 6.2 Google Sign-in — Frontend uses GIS; backend verifies ID token and issues JWTs.
+- 6.3 UserLogin — Email/password login with email verification enforcement.
+- 6.4 PasswordReset — Request + confirm password reset via emailed token.
+- 6.5 Profile Management — Update name, industry, phone, picture URL; change password with policy enforcement.
 
 ## Tech Stack
 

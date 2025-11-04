@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { fetchOpportunityGeoJSON } from '../../services/api'
+import { heroBackgroundStyle, heroOverlayClass } from '../../theme/heroStyles'
 
 function parseIds(): string[] {
   const hash = window.location.hash || ''
@@ -38,15 +39,19 @@ export default function ComparisonPage(){
   function goBack(){ window.location.hash = '#/map' }
 
   return (
-    <div className="h-full p-4">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="m-0 text-[20px] font-semibold">Comparison</h1>
-          <button onClick={goBack} className="px-3 py-1 border rounded">Back to Map</button>
+    <div
+      className="min-h-screen relative flex items-center justify-center px-4 py-16"
+      style={heroBackgroundStyle}
+    >
+      <div className={heroOverlayClass} aria-hidden="true" />
+      <div className="relative w-full max-w-5xl mx-auto bg-white/90 rounded-[2.25rem] shadow-[0_35px_90px_-25px_rgba(15,15,45,0.55)] backdrop-blur-2xl border border-white/40 p-6 md:p-10">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="m-0 text-2xl md:text-3xl font-bold text-black">Comparison</h1>
+          <button onClick={goBack} className="px-4 py-2 rounded-lg border border-violet-600 text-violet-700 font-semibold hover:bg-violet-50 transition text-sm md:text-base">Back to Map</button>
         </div>
 
         {/* Titles aligned over the two value columns */}
-        <div className="grid grid-cols-[240px_1fr_1fr] gap-3 mb-3 items-stretch">
+        <div className="grid grid-cols-[240px_1fr_1fr] gap-3 mb-4 items-stretch">
           <div />
           {[0,1].map(i => {
             const f = items[i]
@@ -54,8 +59,8 @@ export default function ComparisonPage(){
             const title = p.SUBZONE_N ?? p.subzone ?? '—'
             const rankVal = p.H_rank ?? p.h_rank
             return (
-              <div key={i} className="border border-gray-200 rounded-lg p-3">
-                <div className="font-semibold">{title}</div>
+              <div key={i} className="border border-gray-200 rounded-xl p-4 bg-white">
+                <div className="font-semibold text-gray-900">{title}</div>
                 <div className="text-xs text-gray-500">Rank {rankVal ?? '—'}</div>
               </div>
             )
@@ -63,12 +68,12 @@ export default function ComparisonPage(){
         </div>
 
         {/* Side-by-side metric rows */}
-        <div className="border border-gray-200 rounded-lg p-3 mb-3">
+        <div className="border border-gray-200 rounded-xl p-4 mb-4 bg-white">
           {renderCompareRows(items)}
         </div>
 
         {/* Grouped bar chart for age groups */}
-        <div className="border border-gray-200 rounded-lg p-3 flex justify-center overflow-auto">
+        <div className="border border-gray-200 rounded-xl p-4 bg-white overflow-auto">
           <div className="text-sm font-semibold mb-2">Population by age group</div>
           <div className="w-full flex justify-center">
             <AgeGroupChart items={items} />
@@ -128,8 +133,8 @@ function RowCompare({ label, a, b, fmt }: { label: string, a: number | null, b: 
   return (
     <div className="grid grid-cols-[240px_1fr_1fr] items-center py-2 gap-3">
       <div className="text-sm text-gray-600">{label}</div>
-      <div className={`text-sm text-right px-2 py-1 rounded ${aIsGreater ? 'bg-green-50 text-green-700 font-semibold' : 'text-gray-800'}`}>{fmt(a)}</div>
-      <div className={`text-sm text-right px-2 py-1 rounded ${bIsGreater ? 'bg-green-50 text-green-700 font-semibold' : 'text-gray-800'}`}>{fmt(b)}</div>
+      <div className={`text-sm text-right px-2 py-1 rounded ${aIsGreater ? 'bg-violet-50 text-violet-700 font-semibold' : 'text-gray-800'}`}>{fmt(a)}</div>
+      <div className={`text-sm text-right px-2 py-1 rounded ${bIsGreater ? 'bg-violet-50 text-violet-700 font-semibold' : 'text-gray-800'}`}>{fmt(b)}</div>
     </div>
   )
 }
@@ -174,7 +179,7 @@ function AgeGroupChart({ items }: { items: any[] }){
             return (
               <g key={g.key}>
                 {/* bars */}
-                <rect x={aX} y={aY} width={barWidth - 4} height={aH} fill="#60a5fa" />
+                <rect x={aX} y={aY} width={barWidth - 4} height={aH} fill="#7c3aed" />
                 <rect x={bX} y={bY} width={barWidth - 4} height={bH} fill="#f97316" />
                 {/* labels */}
                 <text x={aX + (barWidth-4)/2} y={Math.max(12, aY - 6)} textAnchor="middle" fontSize="11" fill="#111827">{fmtInt(g.a)}</text>

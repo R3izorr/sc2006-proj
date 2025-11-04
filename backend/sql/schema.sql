@@ -1,3 +1,6 @@
+-- Combined database schema and migrations
+-- This file merges the previous incremental SQL scripts into one.
+
 -- Enable gen_random_uuid for UUID defaults
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -49,12 +52,33 @@ ALTER TABLE IF EXISTS subzones ADD COLUMN IF NOT EXISTS "Acc" DOUBLE PRECISION;
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
+    password_hash TEXT,
     role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('admin','client')),
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    last_login_at TIMESTAMPTZ
+    last_login_at TIMESTAMPTZ,
+    google_sub TEXT UNIQUE,
+    display_name TEXT,
+    picture_url TEXT,
+    industry TEXT,
+    phone TEXT,
+    email_verified BOOLEAN NOT NULL DEFAULT false,
+    email_verification_token TEXT,
+    email_verification_sent_at TIMESTAMPTZ,
+    password_reset_token TEXT,
+    password_reset_sent_at TIMESTAMPTZ
 );
+
+-- Optional check constraint for industry values as requested
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'users_industry_check'
+  ) THEN
+    ALTER TABLE users
+      ADD CONSTRAINT users_industry_check CHECK (industry IS NULL OR industry IN ('student','businessmen'));
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -64,5 +88,3 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     revoked_at TIMESTAMPTZ
 );
-
-
