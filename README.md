@@ -140,13 +140,13 @@ sc2006-proj/
 - 1.2 ChoroplethLayer — Shade subzones by Hawker-Opportunity Score with legend and normalized colour scale.
 - 1.3 MapInteractionControls — Zoom, pan, and hover interactions on the subzone map.
 
-### Display score and percentile
+### Display score and rank
 - 2.1 Hawker-OpportunityScore — Compute Dem, Sup, Acc, z-scale components, and produce Hᵢ with configurable weights and bandwidths.
-- 2.2 ShowSubzoneRank — Show each selected subzone’s city-wide percentile for Hᵢ.
+- 2.2 ShowSubzoneRank — Show each selected subzone’s city-wide rank for Hᵢ.
 
 ### Filtering and search
 - 3.1 FilterByRegion — Filter visible subzones by region. 
-- 3.2 FilterByRank — Filter by Top 10% / 25% / 50% or All; update legend accordingly.
+- 3.2 FilterByRank — Filter by Top 10 / 25 / 50 or All; update legend accordingly.
 - 3.3 SearchBySubzoneName — Autocomplete search; zoom and highlight on selection.
 
 ### Subzone details and comparison
@@ -157,7 +157,7 @@ sc2006-proj/
 ### Admin data operations and user management
 - 5.1 ManageData — Upload FeatureCollection GeoJSON, ingest + recompute + export current snapshot.
 - 5.2 ManageSnapshots — List, view, and restore snapshots with version notes and timestamps.
-- 5.4 ManageUsers — Dedicated tab in AdminPage for user management.
+- 5.3 ManageUsers — Dedicated tab in AdminPage for user management.
 
 ### Authentication & profile
 - 6.1 ClientRegistration — Register (Full Name, Email, Password, Industry, optional Phone); verification email dispatched.

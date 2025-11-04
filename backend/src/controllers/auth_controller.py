@@ -59,11 +59,19 @@ def register(
 
 
 def login(session: Session, *, email: str, password: str) -> dict[str, Any]:
+    # Check if user exists
     user = user_repo.get_user_by_email(session, email)
-    if not user or not auth_service.verify_password(password, user.password_hash):
-        raise ValueError("Invalid credentials")
+    if not user:
+        raise ValueError("Email is incorrect")
+    
+    # Check if email is verified
     if not user.email_verified:
-        raise ValueError("Email not verified")
+        raise ValueError("Email is not verified. Check your email inbox.")
+    
+    # Check if password is correct
+    if not auth_service.verify_password(password, user.password_hash):
+        raise ValueError("Password is incorrect")
+    
     pair = auth_service.issue_token_pair(user_id=user.id, role=user.role)
     auth_service.create_refresh_token(session, user_id=user.id, refresh_token=pair.refresh_token, expires_at_ts=pair.refresh_expires_at)
     user.last_login_at = datetime.now(timezone.utc)

@@ -53,7 +53,11 @@ export async function apiLogin(email: string, password: string): Promise<LoginRe
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
   })
-  if(!r.ok) throw new Error('Login failed')
+  if(!r.ok){
+    const errorData = await r.json().catch(() => null)
+    const errorMsg = errorData?.detail || 'Login failed'
+    throw new Error(errorMsg)
+  }
   return r.json()
 }
 
@@ -109,7 +113,11 @@ export async function apiGoogleLogin(idToken: string): Promise<LoginResponse> {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id_token: idToken })
   })
-  if(!r.ok) throw new Error('Google login failed')
+  if(!r.ok){
+    const errorData = await r.json().catch(() => null)
+    const errorMsg = errorData?.detail || 'Google login failed'
+    throw new Error(errorMsg)
+  }
   return r.json()
 }
 

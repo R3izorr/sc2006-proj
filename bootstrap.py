@@ -93,7 +93,7 @@ def start_backend():
     print("[4/4] Starting backend server at http://127.0.0.1:8000 ...")
     # Run uvicorn in-process
     import uvicorn
-    uvicorn.run("backend.src.main:app", host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run("backend.src.main:app", host="127.0.0.1", port=8000, reload=True)
 
 def main():
     try:

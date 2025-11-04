@@ -105,13 +105,6 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
 
   const center = useMemo<LatLngExpression>(()=>[1.3521, 103.8198],[])
 
-  // Add zoom control to bottom-right after map loads
-  useEffect(() => {
-    if (mapRef.current) {
-      L.control.zoom({ position: 'bottomright' }).addTo(mapRef.current)
-    }
-  }, [])
-
   // --- Geometry helpers (point-in-polygon for Polygon / MultiPolygon) ---
   // Boundary is considered inside (inclusive)
   function pointOnSegment(p: [number, number], a: [number, number], b: [number, number], eps = 1e-8): boolean {
@@ -371,7 +364,7 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
       <div
         style={{
           position: 'absolute',
-          bottom: 112,
+          bottom: 200,
           right: 10,
           zIndex: 1000,
           display: 'flex',
@@ -384,8 +377,8 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
           style={{
             width: 32,
             height: 32,
-            background: '#22292f',
-            border: '1px solid #22292f',
+            background: viewMode === 'heat' ? '#7c3aed' : '#22292f',
+            border: '1px solid ' + (viewMode === 'heat' ? '#7c3aed' : '#22292f'),
             borderBottom: 'none',
             color: '#fff',
             fontSize: 18,
@@ -395,19 +388,27 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
             outline: 'none',
             cursor: 'pointer',
             marginBottom: 6,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
           }}
           onClick={()=> setViewMode('heat')}
           title="Heat Map"
         >
-          1
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="6"/>
+            <circle cx="12" cy="12" r="2"/>
+          </svg>
         </button>
         <button
           className="leaflet-control-zoom-out"
           style={{
             width: 32,
             height: 32,
-            background: '#22292f',
-            border: '1px solid #22292f',
+            background: viewMode === 'boundaries' ? '#7c3aed' : '#22292f',
+            border: '1px solid ' + (viewMode === 'boundaries' ? '#7c3aed' : '#22292f'),
             color: '#fff',
             fontSize: 18,
             fontWeight: 600,
@@ -415,11 +416,19 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
             borderBottomRightRadius: 4,
             outline: 'none',
             cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
           }}
           onClick={()=> setViewMode('boundaries')}
           title="Boundaries"
         >
-          2
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
         </button>
       </div>
       
@@ -487,5 +496,3 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
     </div>
   )
 }
-
-
