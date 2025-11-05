@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { apiVerifyEmailConfirm } from "../../services/api";
+import {
+  authCardClass,
+  heroBackgroundStyle,
+  heroOverlayClass,
+} from "../../theme/heroStyles";
 
 export default function VerifyEmailPage() {
   const [status, setStatus] = useState<"idle" | "ok" | "err">("idle");
@@ -35,11 +40,12 @@ export default function VerifyEmailPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div
-        className="flex flex-col items-center justify-center w-full max-w-[1100px] min-h-[82vh] mx-auto rounded-[2.5rem] shadow-2xl bg-white p-0 relative overflow-hidden"
-        style={{ margin: "2vw" }}
-      >
+    <div
+      className="min-h-screen flex items-center justify-center relative px-4 py-16"
+      style={heroBackgroundStyle}
+    >
+      <div className={heroOverlayClass} aria-hidden="true" />
+      <div className={authCardClass} style={{ margin: "2vw" }}>
         <div className="flex flex-col justify-center items-center w-full max-w-[600px] px-6 md:px-12 py-16 md:py-20 h-full mx-auto text-center">
           <div className="mb-8 w-full flex flex-col items-center">
             <a
