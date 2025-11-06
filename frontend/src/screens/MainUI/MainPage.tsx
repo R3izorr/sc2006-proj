@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import MapView from '../../components/Map/MapView'
 import { AppStateProvider } from '../../contexts/AppStateContext'
 import { fetchOpportunityGeoJSON } from '../../services/api'
+import ChatBox from '../../components/Chat/ChatBox'
+import ChatButton from '../../components/Chat/ChatButton'
 
 export default function MainPage(){
   const [selected, setSelected] = useState<any | null>(null)
@@ -20,6 +22,7 @@ export default function MainPage(){
   const [selectedForExport, setSelectedForExport] = useState<any[]>([])
   const [trayCollapsed, setTrayCollapsed] = useState(true)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   // Load GeoJSON data for export functionality
   useEffect(()=>{
@@ -742,6 +745,15 @@ export default function MainPage(){
           )}
         </div>
       </div>
+
+      {/* AI Chat Components */}
+      {!isChatOpen && (
+        <ChatButton onClick={() => setIsChatOpen(true)} />
+      )}
+      <ChatBox 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)} 
+      />
     </AppStateProvider>
   )
 }

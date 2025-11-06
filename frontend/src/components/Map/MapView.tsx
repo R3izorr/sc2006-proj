@@ -456,7 +456,7 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
           <button
             onClick={()=>{ window.location.hash = '#/admin' }}
             title="Admin Console"
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px' }}
           >
             <img src="/icons/admin_icon.png" alt="admin" className="w-7 h-7" />
           </button>
@@ -465,7 +465,7 @@ export default function MapView({ selectedId, onSelect, searchName, onNamesLoade
         <div style={{ position: 'relative' }}>
           <button
             title="Settings"
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px' }}
             onClick={()=> setMenuOpen(o=>!o)}
           >
             <img src="/icons/settings_icon.png" alt="settings" className="w-7 h-7" />
