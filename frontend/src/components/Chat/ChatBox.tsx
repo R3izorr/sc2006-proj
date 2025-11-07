@@ -195,7 +195,6 @@ export default function ChatBox({ onClose, isOpen }: ChatBoxProps) {
           </div>
           <div>
             <h3 className="font-bold text-white">AI Assistant</h3>
-            <p className="text-xs text-purple-100">Powered by Llama 3.1 8B</p>
           </div>
         </div>
         <button

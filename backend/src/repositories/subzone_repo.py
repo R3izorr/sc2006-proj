@@ -91,11 +91,17 @@ def select_subzones(
             "subzone": sz.subzone_id,
             "planning_area": sz.planning_area,
             "population": sz.population,
+            "pop_0_25": sz.pop_0_25,
+            "pop_25_65": sz.pop_25_65,
+            "pop_65plus": sz.pop_65plus,
             "hawker": sz.hawker,
             "mrt": sz.mrt,
             "bus": sz.bus,
             "H_score": sz.h_score,
             "H_rank": sz.h_rank,
+            "Dem": sz.Dem,
+            "Sup": sz.Sup,
+            "Acc": sz.Acc,
         })
     return result
 

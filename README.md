@@ -226,8 +226,7 @@ sc2006-proj/
 
 ```bash
 # Install Ollama from https://ollama.com/download
-# Then pull the Llama 3.1 8B model
-ollama pull llama3.1:8b
+ollama pull gpt-oss:20b
 
 # Start Ollama (it runs as a background service)
 # Windows: Already running after installation
