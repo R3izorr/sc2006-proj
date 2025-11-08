@@ -15,35 +15,45 @@ function lerp(a: number, b: number, t: number){ return a + (b - a) * t }
 
 function hex(c: number){ const h = Math.round(c).toString(16).padStart(2, '0'); return h }
 
-function mixRedYellowGreen(t: number){
-  // 0 -> red (#d73027), 0.5 -> yellow (#ffd54f), 1 -> green (#1a9850)
-  const r1=0xd7,g1=0x30,b1=0x27 // red
-  const r2=0xff,g2=0xd5,b2=0x4f // yellow
-  const r3=0x1a,g3=0x98,b3=0x50 // green
-  if(t <= 0.5){
-    const tt = t / 0.5
-    const r = lerp(r1, r2, tt)
-    const g = lerp(g1, g2, tt)
-    const b = lerp(b1, b2, tt)
-    return `#${hex(r)}${hex(g)}${hex(b)}`
-  } else {
-    const tt = (t - 0.5) / 0.5
-    const r = lerp(r2, r3, tt)
-    const g = lerp(g2, g3, tt)
-    const b = lerp(b2, b3, tt)
-    return `#${hex(r)}${hex(g)}${hex(b)}`
+function mixColorScale(t: number){
+  // More varied color scale with 5 stops:
+  // 0 -> dark red (#8B0000), 0.25 -> orange (#FF6347), 0.5 -> yellow (#FFD700)
+  // 0.75 -> light green (#90EE90), 1 -> dark green (#006400)
+  const colors = [
+    { r: 0x8B, g: 0x00, b: 0x00 }, // 0.00 - dark red
+    { r: 0xFF, g: 0x63, b: 0x47 }, // 0.25 - orange/tomato
+    { r: 0xFF, g: 0xD7, b: 0x00 }, // 0.50 - gold/yellow
+    { r: 0x90, g: 0xEE, b: 0x90 }, // 0.75 - light green
+    { r: 0x00, g: 0x64, b: 0x00 }  // 1.00 - dark green
+  ]
+  
+  const segments = colors.length - 1
+  const scaledT = t * segments
+  const idx = Math.floor(scaledT)
+  const localT = scaledT - idx
+  
+  if (idx >= segments) {
+    return `#${hex(colors[segments].r)}${hex(colors[segments].g)}${hex(colors[segments].b)}`
   }
+  
+  const c1 = colors[idx]
+  const c2 = colors[idx + 1]
+  const r = lerp(c1.r, c2.r, localT)
+  const g = lerp(c1.g, c2.g, localT)
+  const b = lerp(c1.b, c2.b, localT)
+  
+  return `#${hex(r)}${hex(g)}${hex(b)}`
 }
 
 export default function HeatMapLayer({ data, selectedId, onSelect }: Props){
-  const scores = useMemo(()=>{
+  const ranks = useMemo(()=>{
     const arr: number[] = []
     for(const f of (data?.features || [])){
       const p = (f as any)?.properties ?? {}
-      const s = Number(p.H_score ?? p.h_score)
-      if(Number.isFinite(s)) arr.push(s)
+      const rank = Number(p.H_rank ?? p.h_rank)
+      if(Number.isFinite(rank)) arr.push(rank)
     }
-    if(arr.length === 0) return { min: 0, max: 1 }
+    if(arr.length === 0) return { min: 1, max: 332 }
     return { min: Math.min(...arr), max: Math.max(...arr) }
   }, [data])
 
@@ -63,9 +73,10 @@ export default function HeatMapLayer({ data, selectedId, onSelect }: Props){
   const style = (feature?: Feature<Geometry>): PathOptions => {
     const id = featureId(feature)
     const props: any = (feature as any)?.properties ?? {}
-    const s = Number(props.H_score ?? props.h_score)
-    const t = clamp01(scores.max === scores.min ? 0.5 : (s - scores.min) / (scores.max - scores.min))
-    const fillColor = mixRedYellowGreen(t)
+    const rank = Number(props.H_rank ?? props.h_rank)
+    // Reverse the normalization: rank 1 (best) -> t=1 (green), rank 332 (worst) -> t=0 (red)
+    const t = clamp01(ranks.max === ranks.min ? 0.5 : 1 - (rank - ranks.min) / (ranks.max - ranks.min))
+    const fillColor = mixColorScale(t)
     const selected = selectedId && id && String(id) === String(selectedId)
     return selected
       ? { ...baseStyle, weight: 2.5, color: '#000', fillColor, fillOpacity: 0.7 }
@@ -75,8 +86,9 @@ export default function HeatMapLayer({ data, selectedId, onSelect }: Props){
   const onEachFeature = (feature: any, layer: any) => {
     const props = feature?.properties ?? {}
     const name = props.SUBZONE_N ?? props.subzone ?? 'Unknown'
-    const s = Number(props.H_score ?? props.h_score ?? 0)
-    layer.bindTooltip(`${name}<br/>H: ${s.toFixed(3)}`, { sticky: true, direction: 'top', opacity: 0.95 })
+    const rank = Number(props.H_rank ?? props.h_rank ?? 0)
+    const score = Number(props.H_score ?? props.h_score ?? 0)
+    layer.bindTooltip(`${name}<br/>Rank: #${rank}<br/>H: ${score.toFixed(3)}`, { sticky: true, direction: 'top', opacity: 0.95 })
     layer.on('click', () => onSelect?.(feature))
   }
 
