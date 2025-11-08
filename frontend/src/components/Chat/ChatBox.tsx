@@ -16,11 +16,19 @@ function formatResponse(text: string): string {
   // First, normalize whitespace - remove excessive spaces but keep newlines
   text = text.replace(/ +/g, ' ');
   
+  // CRITICAL FIX: Add line breaks between numbered list items
+  // Match pattern: "number. text number. text" → "number. text\n\nnumber. text"
+  // Look for: digit(s) followed by period, then later another digit followed by period
+  text = text.replace(/(\d+\.\s+[^\d]+?)\s+(\d+\.\s+)/g, '$1\n\n$2');
+  
+  // Also handle markdown bold in lists: "1. **TEXT** 2. **TEXT**"
+  text = text.replace(/(\d+\.\s+\*\*[^*]+\*\*[^\d]+?)\s+(\d+\.\s+)/g, '$1\n\n$2');
+  
   // Fix broken numbered list items - detect pattern like "1." followed by uppercase and consolidate
   text = text.replace(/(\d+)\.\s*\n+\s*([A-Z])/g, '$1. $2');
   
   // Add proper spacing before numbered items (ensure they start on new lines)
-  text = text.replace(/(?<!\n\n)(\d+\.\s+[A-Z])/g, '\n\n$1');
+  text = text.replace(/(?<!\n)(\d+\.\s+[A-Z*])/g, '\n\n$1');
   
   // Fix "H-Score:" being split from its value
   text = text.replace(/H-Score:\s*\n+\s*(\d)/g, 'H-Score: $1');
@@ -31,7 +39,7 @@ function formatResponse(text: string): string {
   // Add spacing after each complete subzone entry (before next number)
   text = text.replace(/(Bus Stops:\s*\d+)\s*(\d+\.)/g, '$1\n\n$2');
   
-  // Ensure proper paragraph breaks
+  // Ensure proper paragraph breaks for sentences
   text = text.replace(/([.!?])\s+([A-Z][a-z])/g, '$1\n\n$2');
   
   // Clean up excessive newlines (more than 2)

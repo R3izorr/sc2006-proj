@@ -8,7 +8,7 @@ This project proposes a data-driven web application that identifies promising lo
 
 📊 **Smart Ranking System** — Data-driven H-Score based on Demographics (Dem), Supply (Sup), and Accessibility (Acc) components
 
-🤖 **AI Assistant** — Local LLM-powered chatbot (Llama 3.1 8B) with smart context injection for accurate, data-grounded responses about subzone rankings and platform features
+🤖 **AI Assistant** — Local LLM-powered chatbot with smart context injection for accurate, data-grounded responses about subzone rankings and platform features
 
 🔍 **Advanced Filtering** — Search by name, filter by region, rank (Top 10/20/50), and export detailed reports
 
@@ -205,12 +205,8 @@ sc2006-proj/
 - FastAPI
 - Python
 - PostgreSQL (Neon) — user management, snapshots, subzone data
-- Ollama — local LLM inference (llama3.1:8b recommended for 8GB VRAM)
+- Ollama — local LLM inference 
 
-**AI/ML:**
-- Ollama (local LLM server)
-- Llama 3.1 8B model (default)
-- Smart context injection for data-grounded responses
 
 ## Run locally (step‑by‑step)
 
@@ -218,7 +214,7 @@ sc2006-proj/
 - Python 3.11+ and Node 18+
 - A Neon Postgres database (connection string)
 - **Ollama** installed ([https://ollama.com/download](https://ollama.com/download))
-- **Llama 3.1 8B model** (recommended for systems with 8GB+ VRAM)
+- **gpt-oss:20b** (recommended for systems with 8GB+ VRAM)
 
 ### Setup Steps
 
@@ -259,7 +255,7 @@ TOKEN_TTL_PW_RESET_HOURS=1
 
 # AI Chat (Ollama)
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.1:8b
+OLLAMA_MODEL=gpt-oss:20b
 ```
 
 > **Tips:** 

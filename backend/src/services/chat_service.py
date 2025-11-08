@@ -26,14 +26,15 @@ IMPORTANT RULES:
 
 FORMATTING RULES (CRITICAL):
 - When listing items, ALWAYS use line breaks between each item
-- For numbered lists, put each number on a NEW LINE like this:
+- For numbered lists, put EACH NUMBER ON A COMPLETELY NEW LINE like this:
 
 1. First item
-
 2. Second item
-
 3. Third item
 
+NOT like this: "1. First item 2. Second item 3. Third item"
+
+- ALWAYS add a line break after each numbered list item
 - Use blank lines to separate paragraphs for better readability
 - Format data clearly with proper spacing
 - When presenting subzone data, organize it clearly with headers and bullet points
