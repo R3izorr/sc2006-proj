@@ -11,6 +11,10 @@ import {
   apiAdminDeleteUser,
   type AdminUser,
 } from "../../services/api";
+import {
+  heroBackgroundStyle,
+  heroOverlayClass,
+} from "../../theme/heroStyles";
 
 export default function AdminPage() {
   const [token, setToken] = useState<string>(
@@ -147,8 +151,12 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-16">
-      <div className="w-full max-w-7xl bg-white rounded-3xl shadow-2xl p-12 md:p-24 flex flex-col gap-14">
+    <div
+      className="min-h-screen flex flex-col items-center py-16 relative px-4"
+      style={heroBackgroundStyle}
+    >
+      <div className={heroOverlayClass} aria-hidden="true" />
+      <div className="relative w-full max-w-7xl bg-white/90 backdrop-blur-2xl border border-white/40 rounded-3xl shadow-[0_35px_90px_-25px_rgba(15,15,45,0.6)] p-12 md:p-24 flex flex-col gap-14">
         <div className="flex items-center justify-between mb-10">
           <h1 className="text-[2.6rem] font-bold mt-4 mb-0 text-center text-black">
             Admin Console
