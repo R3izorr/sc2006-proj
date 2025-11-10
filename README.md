@@ -51,13 +51,11 @@ sc2006-proj/
 │       │   ├── auth_router.py            # /auth/* (login/register/profile/email workflows)
 │       │   ├── chat_router.py            # /chat/* (AI assistant with streaming support)
 │       │   ├── data_router.py            # /data/* (secured GeoJSON endpoints)
-│       │   ├── export_router.py          # /export/* (data export endpoints)
 │       │   ├── subzones_router.py        # /subzones/* (subzone queries)
 │       │   └── deps.py                   # FastAPI deps (DB session, JWT guards)
 │       ├── schemas/                      # Pydantic request/response DTOs
 │       │   ├── auth_schemas.py           # Auth-related schemas
 │       │   ├── chat_schemas.py           # Chat request/response schemas
-│       │   ├── export_schemas.py         # Export-related schemas
 │       │   └── subzone_schemas.py        # Subzone-related schemas
 │       └── services/                     # Business logic
 │           ├── auth_service.py           # Hash/verify, JWT, password policy, refresh tokens
@@ -147,8 +145,8 @@ sc2006-proj/
 - **backend/src/db**: SQLAlchemy engine/session helpers; `get_session()` dependency for FastAPI.
 - **backend/src/models**: ORM models split by concern (users, tokens, snapshots, subzones).
 - **backend/src/repositories**: Pure DB access (CRUD/queries) used by controllers/services.
-- **backend/src/services**: Business logic (auth/JWT/password policy, email delivery, data assembly, snapshot ingest/export, Ollama LLM integration).
-- **backend/src/controllers**: Orchestrate use-cases (auth flows, dataset refresh/export, GeoJSON assembly, AI chat with context injection).
+- **backend/src/services**: Business logic (auth/JWT/password policy, email delivery, data assembly, snapshot ingest, Ollama LLM integration).
+- **backend/src/controllers**: Orchestrate use-cases (auth flows, dataset refresh, GeoJSON assembly, AI chat with context injection).
 - **backend/src/routers**: HTTP endpoints; auth now covers registration, JWT, Google sign-in, email verification, password reset, and profile. Chat endpoints support streaming responses.
 - **frontend/src/components/Chat**: AI chatbot UI (floating button, chat window with streaming).
 - **frontend/src/screens/MainUI**: Interactive map experience (details, search, filters, compare tray) with integrated AI assistant.
