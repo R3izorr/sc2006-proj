@@ -6,8 +6,8 @@ from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-CONTENT_DIR = BASE_DIR / "content"
-OUT_PATH = CONTENT_DIR / "out" / "hawker_opportunities_ver2.geojson"
+DATA_DIR = BASE_DIR / "data"
+OUT_PATH = DATA_DIR / "out" / "hawker_opportunities_ver2.geojson"
 
 load_dotenv()
 app = FastAPI(title="Hawker Opportunity API")

@@ -79,7 +79,7 @@ def create_admin_user():
             if existing:
                 print(f"    Admin user already exists: {email}")
             else:
-                uid = create_user(s, email=email, password_hash=hash_password(password), role="admin")
+                uid = create_user(s, email=email, password_hash=hash_password(password), role="admin", email_verified=True)
                 print(f"    Created admin user {email} with id: {uid}")
         print("    OK")
     except Exception as e:

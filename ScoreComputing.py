@@ -12,12 +12,12 @@ from bs4 import BeautifulSoup
 
 # ------------- Paths (same folder) -------------
 BASE = Path(__file__).resolve().parent
-MP   = "content/MasterPlan2019SubzoneBoundaryNoSeaGEOJSON.geojson"
-POP  = "content/ResidentPopulationbyPlanningAreaSubzoneofResidenceAgeGroupandSexCensusofPopulation2020.csv"
-HAWK = "content/HawkerCentresGEOJSON.geojson"
-MRT  = "content/LTAMRTStationExitGEOJSON.geojson"    # exits, CRS84/WGS84
-BUS  = "content/bus_stops.geojson"                    # your sample is EPSG:3414
-OUT  = "hawker_opportunities_ver2.geojson"           # (requested spelling)
+MP   = "data/MasterPlan2019SubzoneBoundaryNoSeaGEOJSON.geojson"
+POP  = "data/ResidentPopulationbyPlanningAreaSubzoneofResidenceAgeGroupandSexCensusofPopulation2020.csv"
+HAWK = "data/HawkerCentresGEOJSON.geojson"
+MRT  = "data/LTAMRTStationExitGEOJSON.geojson"    # exits, CRS84/WGS84
+BUS  = "data/bus_stops.geojson"                    # your sample is EPSG:3414
+OUT  = "data/out/hawker_opportunities_ver2.geojson"           # (requested spelling)
 
 # ------------- Helpers -------------
 def parse_from_desc(html: str, key: str):

@@ -25,6 +25,7 @@ def create_user(
     display_name: Optional[str] = None,
     industry: Optional[str] = None,
     phone: Optional[str] = None,
+    email_verified: bool = False,
 ) -> str:
     u = User(
         email=email,
@@ -33,6 +34,7 @@ def create_user(
         display_name=display_name,
         industry=industry,
         phone=phone,
+        email_verified=email_verified,
     )
     session.add(u)
     session.flush()

@@ -26,7 +26,7 @@ def refresh(body: RefreshBody | None = None, session: Session = Depends(db_sessi
         geojson=body.geojson,
         note=body.note,
         created_by=body.created_by,
-        export_dir="content/out",
+        export_dir="data/out",
     )
 
 @router.get("/snapshots")
@@ -35,7 +35,7 @@ def list_snapshots(session: Session = Depends(db_session), _admin=Depends(requir
 
 @router.post("/snapshots/{snapshot_id}/restore")
 def restore_snapshot(snapshot_id: str, session: Session = Depends(db_session), _admin=Depends(require_admin)):
-    return admin_controller.restore_snapshot(session, snapshot_id, export_dir="content/out")
+    return admin_controller.restore_snapshot(session, snapshot_id, export_dir="data/out")
 
 
 # ---- User management ----

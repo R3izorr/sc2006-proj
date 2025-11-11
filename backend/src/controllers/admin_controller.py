@@ -15,7 +15,7 @@ def refresh_snapshot(
     geojson: dict[str, Any],
     note: Optional[str] = None,
     created_by: Optional[str] = None,
-    export_dir: str | Path = "content/out",
+    export_dir: str | Path = "data/out",
 ) -> dict[str, Any]:
     """Create a new snapshot from an uploaded/provided GeoJSON and make it current.
 
@@ -42,7 +42,7 @@ def list_snapshots(session: Session) -> list[dict[str, Any]]:
     ]
 
 
-def restore_snapshot(session: Session, snapshot_id: str, *, export_dir: str | Path = "content/out") -> dict[str, Any]:
+def restore_snapshot(session: Session, snapshot_id: str, *, export_dir: str | Path = "data/out") -> dict[str, Any]:
     snapshot_repo.set_current_snapshot(session, snapshot_id)
     out = snapshot_service.export_current_geojson(session, snapshot_id, export_dir)
     return {"snapshot_id": snapshot_id, "export_path": str(out)}
@@ -67,7 +67,7 @@ def create_admin_user(session: Session, *, email: str, password: str) -> dict[st
     if user_repo.get_user_by_email(session, email):
         raise ValueError("Email already registered")
     ph = auth_service.hash_password(password)
-    uid = user_repo.create_user(session, email=email, password_hash=ph, role="admin")
+    uid = user_repo.create_user(session, email=email, password_hash=ph, role="admin", email_verified=True)
     return {"user_id": uid}
 
 

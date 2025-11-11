@@ -128,7 +128,7 @@ sc2006-proj/
 │       └── utils/
 │           ├── colorScale.ts             # Color scale calculations
 │           └── geo.ts                    # Geographic utilities
-├── content/                              # Datasets & the exported GeoJSON used by the map
+├── data/                              # Datasets & the exported GeoJSON used by the map
 │   ├── MasterPlan2019SubzoneBoundaryNoSeaGEOJSON.geojson
 │   ├── HawkerCentresGEOJSON.geojson
 │   ├── LTAMRTStationExitGEOJSON.geojson
@@ -137,7 +137,7 @@ sc2006-proj/
 │   └── out/
 │       └── hawker_opportunities_ver2.geojson   # "current" snapshot export
 ├── README.md
-├── ScoreDemo.py                          # Scoring demo / notebook-style script
+├── ScoreComputing.py                          # Score computing
 └── bootstrap.py                          # One-shot setup: create schema/seed, optional export
 ```
 
@@ -154,7 +154,7 @@ sc2006-proj/
 - **frontend/src/screens/Admin**: Tabbed console with Data Management (GeoJSON refresh/snapshots) and User Management (list/create/delete admin users).
 - **frontend/src/screens/Compare**: Side-by-side comparison (Z_Dem, Z_Sup, Z_Acc, H_score, transport, hawkers).
 - **frontend/src/screens/Profile**: Profile updates (name, industry, phone, picture, password change).
-- **content/out**: Exported "current" GeoJSON; the frontend fetches this file (secured by JWT).
+- **data/out**: Exported "current" GeoJSON; the frontend fetches this file (secured by JWT).
 
 ## Functional Requirements (current)
 
@@ -180,7 +180,7 @@ sc2006-proj/
 ### Admin data operations and user management
 - 5.1 ManageData — Upload FeatureCollection GeoJSON, ingest + recompute + export current snapshot.
 - 5.2 ManageSnapshots — List, view, and restore snapshots with version notes and timestamps.
-- 5.3 ManageUsers — Dedicated tab in AdminPage for user management.
+- 5.3 ManageUsers — Dedicated tab in AdminPage for user management. Created admin accounts are automatically verified.
 
 ### Authentication & profile
 - 6.1 ClientRegistration — Register (Full Name, Email, Password, Industry, optional Phone); verification email dispatched.
@@ -236,7 +236,7 @@ DATABASE_URL=postgresql+psycopg://USER:PASSWORD@YOUR-NEON-HOST:5432/DBNAME?sslmo
 
 # JWT & Export
 JWT_SECRET=change-me-in-production
-EXPORT_DIR=content/out
+EXPORT_DIR=data/out
 APP_BASE_URL=http://127.0.0.1:5173
 
 # OAuth
@@ -287,9 +287,9 @@ The AI automatically fetches real data from the database and provides accurate, 
 **6) Admin workflow (UI)
 - Open `http://127.0.0.1:5173/#/admin`.
 - Login with the admin user.
-- If using a freshly created email/password admin, complete the email verification flow before attempting to sign in.
-- Paste a valid FeatureCollection JSON and click “Refresh Dataset”.
-  - Backend ingests rows into Neon, marks the snapshot current, and exports `content/out/hawker_opportunities_ver2.geojson`.
+- Note: Admin accounts created via the Admin Page or bootstrap script are automatically verified and can login immediately.
+- Paste a valid FeatureCollection JSON and click "Refresh Dataset".
+  - Backend ingests rows into Neon, marks the snapshot current, and exports `data/out/hawker_opportunities_ver2.geojson`.
 - Use the Snapshots list to restore any snapshot.
 - Click “Back to Map” to see the latest export on the map. The frontend fetches `/data/opportunity.geojson` with cache‑busting.
 
@@ -323,7 +323,7 @@ The AI automatically fetches real data from the database and provides accurate, 
 
 **User management (admin-only):**
 - `/admin/users` (GET) — list users
-- `/admin/users` (POST) — create admin user (email + password); persists to Neon DB
+- `/admin/users` (POST) — create admin user (email + password); persists to Neon DB; automatically verified
 - `/admin/users/{id}` (DELETE) — delete a user
 
 
@@ -344,7 +344,7 @@ The AI automatically fetches real data from the database and provides accurate, 
 - `#/profile` — ProfilePage: Profile management and password change. **Requires login**.
 - `#/admin` — AdminPage: Data & user management console. **Requires login + admin role**. Non-admin users are redirected to `#/login`.
   - Data Management tab: GeoJSON refresh/snapshots
-  - User Management tab: list users, create admin, delete user (reads/writes to Neon DB)
+  - User Management tab: list users, create admin (automatically verified), delete user (reads/writes to Neon DB)
 
 ## Troubleshooting
 

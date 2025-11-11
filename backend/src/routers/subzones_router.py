@@ -5,7 +5,7 @@ import json
 router = APIRouter()
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-OUT_PATH = BASE_DIR / "content"/"out"/ "hawker_opportunities_ver2.geojson"
+OUT_PATH = BASE_DIR / "data" / "out" / "hawker_opportunities_ver2.geojson"
 
 @router.get("/")
 def list_subzones():
