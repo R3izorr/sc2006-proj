@@ -77,10 +77,10 @@ def create_admin_user():
         with get_session() as s:
             existing = get_user_by_email(s, email=email)
             if existing:
-                print(f"    Admin user already exists: {email}")
+                print(f"    Admin user already exists: {email} with id: {existing.id} and password: {password}")
             else:
                 uid = create_user(s, email=email, password_hash=hash_password(password), role="admin", email_verified=True)
-                print(f"    Created admin user {email} with id: {uid}")
+                print(f"    Created admin user {email} with id: {uid} and password: {password}")
         print("    OK")
     except Exception as e:
         print(f"    ERROR: Failed to create admin user: {e}")

@@ -265,6 +265,7 @@ OLLAMA_MODEL=gpt-oss:20b
 ```bash
 python bootstrap.py
 ```
+> **Macbook's user can get error when running this command. Please refer to the troubleshooting part at the end of README.md**
 
 **4) Start frontend**
 ```bash

@@ -6,7 +6,7 @@ from typing import Any, Optional
 from sqlalchemy.orm import Session
 
 from ..repositories import snapshot_repo, user_repo
-from ..services import snapshot_service, auth_service
+from ..services import snapshot_service, auth_service, data_service
 
 
 def refresh_snapshot(
@@ -15,7 +15,6 @@ def refresh_snapshot(
     geojson: dict[str, Any],
     note: Optional[str] = None,
     created_by: Optional[str] = None,
-    export_dir: str | Path = "data/out",
 ) -> dict[str, Any]:
     """Create a new snapshot from an uploaded/provided GeoJSON and make it current.
 
@@ -24,6 +23,7 @@ def refresh_snapshot(
     sid = snapshot_repo.create_snapshot(session, note=note, created_by=created_by)
     inserted = snapshot_service.bulk_ingest_geojson(session, geojson, sid)
     snapshot_repo.set_current_snapshot(session, sid)
+    export_dir = data_service.DATA_DIR / "out"
     out = snapshot_service.export_current_geojson(session, sid, export_dir)
     return {"snapshot_id": sid, "inserted": inserted, "export_path": str(out)}
 
@@ -42,8 +42,9 @@ def list_snapshots(session: Session) -> list[dict[str, Any]]:
     ]
 
 
-def restore_snapshot(session: Session, snapshot_id: str, *, export_dir: str | Path = "data/out") -> dict[str, Any]:
+def restore_snapshot(session: Session, snapshot_id: str) -> dict[str, Any]:
     snapshot_repo.set_current_snapshot(session, snapshot_id)
+    export_dir = data_service.DATA_DIR / "out"
     out = snapshot_service.export_current_geojson(session, snapshot_id, export_dir)
     return {"snapshot_id": snapshot_id, "export_path": str(out)}
 

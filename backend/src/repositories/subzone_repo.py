@@ -41,6 +41,7 @@ def insert_many(session: Session, snapshot_id: str, features: Iterable[dict[str,
     if not rows:
         return 0
     session.execute(insert(Subzone), rows)
+    session.flush()  # Ensure data is visible for subsequent reads in same transaction
     return len(rows)
 
 

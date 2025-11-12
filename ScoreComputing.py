@@ -17,7 +17,7 @@ POP  = "data/ResidentPopulationbyPlanningAreaSubzoneofResidenceAgeGroupandSexCen
 HAWK = "data/HawkerCentresGEOJSON.geojson"
 MRT  = "data/LTAMRTStationExitGEOJSON.geojson"    # exits, CRS84/WGS84
 BUS  = "data/bus_stops.geojson"                    # your sample is EPSG:3414
-OUT  = "data/out/hawker_opportunities_ver2.geojson"           # (requested spelling)
+OUT  = "hawker_opportunities_ver2.geojson"           # (requested spelling)
 
 # ------------- Helpers -------------
 def parse_from_desc(html: str, key: str):

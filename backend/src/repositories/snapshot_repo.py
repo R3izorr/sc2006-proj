@@ -20,6 +20,7 @@ def set_current_snapshot(session: Session, snapshot_id: str) -> None:
     session.execute(update(Snapshot).values(is_current=False).where(Snapshot.is_current.is_(True)))
     # Set new
     session.execute(update(Snapshot).values(is_current=True).where(Snapshot.id == snapshot_id))
+    session.flush()  # Ensure current snapshot flag is updated
 
 
 def get_current_snapshot_id(session: Session) -> Optional[str]:
